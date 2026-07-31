@@ -1,0 +1,10 @@
+{
+  "editor.formatOnSave": false,
+  "editor.tabSize": 2,
+  "files.eol": "\n",
+  "files.trimTrailingWhitespace": true,
+  "cSpell.language": "fr,en",
+  "liveServer.settings.port": 5500,
+  "search.exclude": { "**/node_modules": true, "**/.vercel": true },
+  "files.associations": { "*.css": "css" }
+}
