@@ -160,7 +160,9 @@ export default function Onboarding() {
         totalDays={gen.totalDays}
         ob={gen.brief || o}
         onDone={() => router.push(`/voyage/${gen.id}`)}
-        onError={(m) => { toast(m); setGen(null); }}
+        /* L'écran de composition affiche lui-même ses erreurs ; il ne
+           renvoie ici que si l'on choisit de revenir aux questions. */
+        onError={(m) => { if (m) toast(m); setGen(null); }}
       />
     );
 

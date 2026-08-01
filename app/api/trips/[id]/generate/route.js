@@ -18,6 +18,8 @@ import {
   generateDays,
   generatePractical,
   isConfigured,
+  explain,
+  isRetryable,
 } from "../../../../../lib/claude";
 
 export const runtime = "nodejs";
@@ -91,8 +93,12 @@ export async function POST(request, { params }) {
 
     return Response.json({ phase: "done", done: true, progress: { written: total, total } });
   } catch (e) {
-    await failTrip(params.id, e.message).catch(() => {});
-    const status = e?.status === 429 ? 429 : 502;
-    return Response.json({ error: e.message }, { status });
+    const message = explain(e);
+    const retryable = isRetryable(e);
+    /* Un solde vide ou un modèle surchargé n'est pas un voyage raté : on le
+       laisse en l'état pour qu'il puisse reprendre là où il s'est arrêté.
+       Le marquer « échoué » condamnait tout le travail déjà écrit. */
+    if (!retryable) await failTrip(params.id, message).catch(() => {});
+    return Response.json({ error: message, retryable }, { status: retryable ? 503 : 502 });
   }
 }

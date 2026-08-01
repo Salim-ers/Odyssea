@@ -86,30 +86,45 @@ export default function ParcoursMap({ ob, step, total }) {
     [ob.dests]
   );
 
+  /* Un échec réseau ne doit pas condamner la carte pour toute la session : le
+     libellé ne changera plus, donc rien ne relancerait la recherche. On
+     réessaie quelques fois, de plus en plus tard. */
+  const [tick, setTick] = useState(0);
+  const retryTimer = useRef(null);
+  useEffect(() => () => clearTimeout(retryTimer.current), []);
+
   useEffect(() => {
     const todo = wanted.filter((q) => !cache.current.has(q));
     if (!todo.length) return;
     let alive = true;
     const timer = setTimeout(async () => {
+      let failed = false;
       for (const q of todo) {
         try {
           const r = await fetch(
             `${GEOCODE}?name=${encodeURIComponent(q)}&count=1&language=fr&format=json`
           );
+          if (!r.ok) throw new Error(r.status);
           const data = await r.json();
           const hit = data?.results?.[0];
+          /* Une recherche sans résultat est une réponse : on la mémorise pour
+             ne pas la reposer. Une panne, elle, ne se mémorise pas. */
           cache.current.set(q, hit ? { lat: hit.latitude, lon: hit.longitude, name: hit.name } : null);
         } catch {
-          /* Réseau indisponible : on retentera à la frappe suivante. */
+          failed = true;
         }
       }
-      if (alive) setFound(Object.fromEntries(cache.current));
+      if (!alive) return;
+      setFound(Object.fromEntries(cache.current));
+      if (failed && tick < 3) {
+        retryTimer.current = setTimeout(() => setTick((t) => t + 1), 2000 * (tick + 1));
+      }
     }, 550);
     return () => {
       alive = false;
       clearTimeout(timer);
     };
-  }, [wanted]);
+  }, [wanted, tick]);
 
   const stops = wanted.map((q) => (found[q] ?? cache.current.get(q)) || null).filter(Boolean);
   const points = [from, ...stops].filter(Boolean);

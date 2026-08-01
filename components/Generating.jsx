@@ -37,7 +37,19 @@ export default function Generating({ tripId, totalDays, ob, onDone, onError }) {
   const [written, setWritten] = useState(0);
   const [note, setNote] = useState(null);
   const [elapsed, setElapsed] = useState(0);
+  const [failure, setFailure] = useState(null);
+  /* Un incrément suffit à relancer la boucle : ce qui est déjà écrit reste en
+     base, la reprise repart de la phase suivante. */
+  const [attempt, setAttempt] = useState(0);
   const started = useRef(false);
+
+  /* Les rappels sont recréés à chaque rendu du parent. S'ils entraient dans
+     les dépendances de l'effet, son nettoyage annulerait la requête en vol et
+     le résultat serait perdu sans un mot — c'est ce qui masquait les erreurs.
+     On les garde donc dans une référence, et l'effet ne dépend que du voyage
+     et de la tentative. */
+  const cb = useRef({ onDone, onError });
+  cb.current = { onDone, onError };
 
   /* Un compteur honnête : on annonce une durée, on montre celle qui court. */
   useEffect(() => {
@@ -57,13 +69,24 @@ export default function Generating({ tripId, totalDays, ob, onDone, onError }) {
         try {
           res = await fetch(`/api/trips/${tripId}/generate`, { method: "POST" });
         } catch {
-          if (!cancelled) onError("Connexion interrompue pendant la composition.");
+          if (!cancelled) {
+            setFailure({
+              message: "Connexion interrompue pendant la composition.",
+              retryable: true,
+            });
+          }
           return;
         }
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-          if (!cancelled) onError(data.error || "La composition a échoué.");
+          if (cancelled) return;
+          /* On reste sur cet écran : renvoyer aux questions ferait tout
+             reperdre, alors que le voyage existe déjà en base. */
+          setFailure({
+            message: data.error || "La composition a échoué.",
+            retryable: Boolean(data.retryable),
+          });
           return;
         }
         if (cancelled) return;
@@ -73,15 +96,26 @@ export default function Generating({ tripId, totalDays, ob, onDone, onError }) {
         if (data.degraded?.length) {
           setNote("Certaines options avancées du modèle ne sont pas disponibles — la composition continue.");
         }
-        if (data.done) return onDone();
+        if (data.done) return cb.current.onDone();
       }
-      if (!cancelled) onError("La composition prend trop de temps. Reprenez depuis « Mes voyages ».");
+      if (!cancelled) {
+        setFailure({
+          message: "La composition prend plus de temps que prévu.",
+          retryable: true,
+        });
+      }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [tripId, onDone, onError]);
+  }, [tripId, attempt]);
+
+  const retry = () => {
+    setFailure(null);
+    started.current = false;
+    setAttempt((n) => n + 1);
+  };
 
   const active = PHASES.findIndex((p) => p.key === phase);
   const dayPart = totalDays ? Math.min(1, written / totalDays) : 0;
@@ -127,6 +161,30 @@ export default function Generating({ tripId, totalDays, ob, onDone, onError }) {
           </span>
           <span className="pct mono">{pct} %</span>
         </div>
+
+        {failure && (
+          <div className="gen-fail" role="alert">
+            <span className="ic"><Icon name="alert" /></span>
+            <div>
+              <b>{failure.retryable ? "La composition est en pause" : "La composition s'est arrêtée"}</b>
+              <p>{failure.message}</p>
+              <div className="acts">
+                <button className="btn btn-gold" onClick={retry}>
+                  <Icon name="spark" />
+                  Reprendre la composition
+                </button>
+                <button className="btn btn-line" onClick={() => cb.current.onError(null)}>
+                  Revenir aux questions
+                </button>
+              </div>
+              {failure.retryable && (
+                <p className="keep">
+                  Ce qui a déjà été écrit est conservé : la reprise repart de la phase suivante.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         <ol className="gen-phases">
           {PHASES.map((p, i) => (
