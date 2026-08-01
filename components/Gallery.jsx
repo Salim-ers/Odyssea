@@ -32,7 +32,13 @@ export default function Gallery() {
 
   const pick = (g) => {
     setActive(g.key);
-    patchOb(() => ({ dest: g.city }));
+    /* La galerie ajoute une escale plutôt que de remplacer : on peut ainsi
+       composer un enchaînement en cliquant plusieurs vignettes. */
+    patchOb((ob) => {
+      const dests = ob.dests || [];
+      if (dests.includes(g.city)) return {};
+      return { dests: [...dests, g.city], fixed: { ...ob.fixed, dest: true } };
+    });
     toast(g.city + " retenue — l'exemple détaillé reste la Malaisie.");
   };
 

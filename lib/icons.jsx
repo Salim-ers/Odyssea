@@ -27,7 +27,9 @@ scoot:'<circle cx="6" cy="17.5" r="2.5"/><circle cx="18.5" cy="17.5" r="2.5"/><p
 landmark:'<path d="M3.5 20h17M5 20V10m4 10V10m6 10V10m4 10V10"/><path d="M12 3.5L21 9H3z"/>',
 map:'<path d="M9 4.5L3.5 6.8V20l5.5-2.3 6 2.3 5.5-2.3V4.5L15 6.8z"/><path d="M9 4.5v13M15 6.8v13"/>',
 leaf:'<path d="M5 19C5 9 12 4 20 4c0 9-5 15-13 15"/><path d="M5 19c3-5 7-8 11-10"/>',
-send:'<path d="M3 20l18-8L3 4l4 8-4 8z"/>'
+send:'<path d="M3 20l18-8L3 4l4 8-4 8z"/>',
+home:'<path d="M4 10.5L12 4l8 6.5V20H4z"/><path d="M9.5 20v-6h5v6"/>',
+edit:'<path d="M4 20h4L19 9a2.1 2.1 0 00-3-3L5 17z"/><path d="M14.5 6.5l3 3"/>'
 };
 
 export function Icon({ name, className, style }) {

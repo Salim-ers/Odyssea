@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AIRPORTS, DEST_SUGG } from "../lib/suggest";
 import { loadPlaces, peekPlaces, search, norm } from "../lib/places";
-import { useOdyssea, frDate } from "../lib/store";
+import { useOdyssea, frDate, LOCKED } from "../lib/store";
 import { Icon } from "../lib/icons";
 
 /* La barre de recherche.
@@ -34,6 +34,7 @@ export default function Composer() {
   const [flex, setFlex] = useState(FLEX[0]);
   const [cursor, setCursor] = useState(0);
   const [fromDraft, setFromDraft] = useState("");
+  const [destDraft, setDestDraft] = useState("");
   const [places, setPlaces] = useState(() => peekPlaces());
   const [loadErr, setLoadErr] = useState(false);
   const root = useRef(null);
@@ -69,13 +70,20 @@ export default function Composer() {
   }, [places, loadErr]);
 
   /* ---- Destination : suggestions maison à vide, monde entier à la frappe ---- */
-  const q = o.dest.trim();
+  const dests = o.dests || [];
+  const q = destDraft.trim();
   const destList = useMemo(() => {
-    if (!q) return DEST_SUGG.map(([name, sub]) => ({ kind: "curated", name, sub }));
-    if (!places) return [];
-    return search(places.destinations, q, 30);
-  }, [q, places]);
-  const freeText = q && !destList.some((d) => norm(d.name) === norm(q));
+    const chosen = new Set(dests.map(norm));
+    const pool = !q
+      ? DEST_SUGG.map(([name, sub]) => ({ kind: "curated", name, sub }))
+      : places
+        ? search(places.destinations, q, 30)
+        : [];
+    /* Une escale déjà retenue n'a pas à être reproposée. */
+    return pool.filter((d) => !chosen.has(norm(d.name)));
+  }, [q, places, dests]);
+  const freeText =
+    q && !destList.some((d) => norm(d.name) === norm(q)) && !dests.some((d) => norm(d) === norm(q));
 
   /* ---- Départ : aéroports habituels à vide, monde entier à la frappe ---- */
   const fq = fromDraft.trim();
@@ -87,11 +95,32 @@ export default function Composer() {
 
   const openPanel = (k) => { setCursor(0); setOpen((v) => (v === k ? null : k)); };
 
-  const pickDest = (name) => {
-    patchOb(() => ({ dest: name }));
-    setOpen(null);
-    destInput.current?.blur();
+  /* Une escale s'ajoute à la suite : le champ reste ouvert et vide, prêt pour
+     la suivante. C'est ce qui rend le multi-destination naturel — on n'a
+     rien à activer. */
+  const addDest = (name) => {
+    const label = String(name || "").trim();
+    if (!label) return;
+    patchOb((ob) => {
+      if ((ob.dests || []).some((d) => norm(d) === norm(label))) return {};
+      if ((ob.dests || []).length >= 5) {
+        toast("Cinq escales au maximum pour un même voyage.");
+        return {};
+      }
+      return { dests: [...(ob.dests || []), label], fixed: { ...ob.fixed, dest: true } };
+    });
+    setDestDraft("");
+    setCursor(0);
+    destInput.current?.focus();
   };
+
+  const dropDest = (name) =>
+    patchOb((ob) => {
+      const next = (ob.dests || []).filter((d) => d !== name);
+      const split = { ...ob.split };
+      delete split[name];
+      return { dests: next, split, fixed: { ...ob.fixed, dest: next.length > 0 } };
+    });
 
   const pickFrom = (a) => {
     if (!a) return;
@@ -103,20 +132,24 @@ export default function Composer() {
   };
 
   /* Départ et retour restent cohérents quoi qu'il arrive. */
-  const setDep = (v) => patchOb((ob) => (nightsBetween(v, ob.ret) > 0 ? { dep: v } : { dep: v, ret: addDays(v, 7) }));
-  const setRet = (v) => patchOb((ob) => (nightsBetween(ob.dep, v) > 0 ? { ret: v } : { ret: v, dep: addDays(v, -7) }));
+  const dated = (ob, patch) => ({ ...patch, fixed: { ...ob.fixed, dates: true } });
+  const setDep = (v) =>
+    patchOb((ob) => dated(ob, nightsBetween(v, ob.ret) > 0 ? { dep: v } : { dep: v, ret: addDays(v, 7) }));
+  const setRet = (v) =>
+    patchOb((ob) => dated(ob, nightsBetween(ob.dep, v) > 0 ? { ret: v } : { ret: v, dep: addDays(v, -7) }));
 
   /* ---- Voyageurs : le groupe d'abord, le décompte seulement s'il a un sens ---- */
+  const travelled = (ob, patch) => ({ ...patch, fixed: { ...ob.fixed, trav: true } });
   const setGroup = (g) => patchOb((ob) => {
-    if (FIXED[g]) return { group: g, adults: FIXED[g], kids: 0, trav: FIXED[g] };
+    if (FIXED[g]) return travelled(ob, { group: g, adults: FIXED[g], kids: 0, trav: FIXED[g] });
     const adults = Math.max(g === "Amis" ? 2 : 1, ob.adults || 2);
     const kids = ob.kids || 0;
-    return { group: g, adults, kids, trav: adults + kids };
+    return travelled(ob, { group: g, adults, kids, trav: adults + kids });
   });
   const setCount = (key, v) => patchOb((ob) => {
     const adults = key === "adults" ? v : ob.adults;
     const kids = key === "kids" ? v : ob.kids;
-    return { adults, kids, trav: adults + kids };
+    return travelled(ob, { adults, kids, trav: adults + kids });
   });
   const asksCount = !FIXED[o.group];
   const travLabel = asksCount
@@ -139,11 +172,22 @@ export default function Composer() {
   };
 
   const nights = nightsBetween(o.dep, o.ret);
-  const ctx = `${o.dest.trim() || "Votre destination"} · ${frDate(o.dep)} → ${frDate(o.ret)}${
+  const ctx = `${dests.length ? dests.join(" · ") : "Votre destination"} · ${frDate(o.dep)} → ${frDate(o.ret)}${
     nights ? ` · ${plural(nights, "nuit")}` : ""
   } · ${plural(o.trav, "voyageur")}`;
 
   const loading = (list, hasQuery) => hasQuery && !places && !loadErr && !list.length;
+
+  /* Partir composer, c'est valider ce que la barre affiche : le questionnaire
+     rappellera ces réponses au lieu de les reposer. */
+  const compose = () => {
+    if (!dests.length) {
+      toast("Indiquez d'abord une destination.");
+      return destInput.current?.focus();
+    }
+    patchOb((ob) => ({ fixed: { ...ob.fixed, ...Object.fromEntries(LOCKED.map((k) => [k, true])) } }));
+    router.push("/parcours");
+  };
 
   return (
     <div className="composer-zone">
@@ -185,31 +229,45 @@ export default function Composer() {
             </div>
           </div>
 
-          {/* Destination — pays et villes du monde entier */}
-          <div className={"cfield" + (open === "dest" ? " open" : "")}>
+          {/* Destination — une ou plusieurs escales, partout dans le monde */}
+          <div className={"cfield grow" + (open === "dest" ? " open" : "")}>
             <span className="ctrigger as-input">
-              <label className="lab" htmlFor="c-dest">Destination</label>
-              <input id="c-dest" ref={destInput} className="val" value={o.dest} autoComplete="off"
-                placeholder="Une ville, un pays, une envie…"
-                role="combobox" aria-expanded={open === "dest"} aria-controls="c-dest-list"
-                onFocus={() => { setCursor(0); setOpen("dest"); wake(); }}
-                onKeyDown={(e) => listNav(e, freeText ? [...destList, null] : destList, "dest",
-                  (hit) => pickDest(hit ? hit.name : q))}
-                onChange={(e) => { setCursor(0); patchOb(() => ({ dest: e.target.value })); wake(); }} />
-              {o.dest && (
-                <button type="button" className="cclear" aria-label="Effacer la destination"
-                  onClick={() => { patchOb(() => ({ dest: "" })); destInput.current?.focus(); }}>×</button>
-              )}
+              <label className="lab" htmlFor="c-dest">
+                {dests.length > 1 ? `Destinations · ${dests.length} escales` : "Destination"}
+              </label>
+              <span className="destbox">
+                {dests.map((d) => (
+                  <span className="dtag" key={d}>
+                    {d}
+                    <button type="button" aria-label={`Retirer ${d}`} onClick={() => dropDest(d)}>×</button>
+                  </span>
+                ))}
+                <input id="c-dest" ref={destInput} className="val" value={destDraft} autoComplete="off"
+                  placeholder={dests.length ? "Ajouter une escale…" : "Une ville, un pays, une envie…"}
+                  role="combobox" aria-expanded={open === "dest"} aria-controls="c-dest-list"
+                  onFocus={() => { setCursor(0); setOpen("dest"); wake(); }}
+                  onKeyDown={(e) => {
+                    /* Retour arrière sur un champ vide : on retire la dernière
+                       escale, comme dans un champ de destinataires. */
+                    if (e.key === "Backspace" && !destDraft && dests.length) {
+                      e.preventDefault();
+                      return dropDest(dests[dests.length - 1]);
+                    }
+                    listNav(e, freeText ? [...destList, null] : destList, "dest",
+                      (hit) => addDest(hit ? hit.name : q));
+                  }}
+                  onChange={(e) => { setCursor(0); setDestDraft(e.target.value); setOpen("dest"); wake(); }} />
+              </span>
             </span>
             <div id="c-dest-list" className={"cpanel wide" + (open === "dest" ? " open" : "")} role="listbox">
               <div className="cpanel-hd">
-                {q ? "Résultats" : "Destinations les plus demandées"}
-                {!q && <em>Tous les pays et toutes les villes desservies</em>}
+                {q ? "Résultats" : dests.length ? "Ajouter une escale" : "Destinations les plus demandées"}
+                {!q && <em>Enchaînez plusieurs escales : Odyssea répartira les nuits</em>}
               </div>
               {destList.map((d, i) => (
                 <button type="button" key={(d.kind || "") + d.name + (d.cc || "")} role="option" aria-selected={cursor === i}
                   className={"row" + (cursor === i ? " cur" : "")}
-                  onMouseEnter={() => setCursor(i)} onClick={() => pickDest(d.name)}>
+                  onMouseEnter={() => setCursor(i)} onClick={() => addDest(d.name)}>
                   <span className="code">
                     {d.kind === "city" ? <Icon name="landmark" />
                       : d.kind === "country" ? <Icon name="map" />
@@ -221,7 +279,7 @@ export default function Composer() {
               {freeText && (
                 <button type="button" role="option" aria-selected={cursor === destList.length}
                   className={"row free" + (cursor === destList.length ? " cur" : "")}
-                  onMouseEnter={() => setCursor(destList.length)} onClick={() => pickDest(q)}>
+                  onMouseEnter={() => setCursor(destList.length)} onClick={() => addDest(q)}>
                   <span className="code"><Icon name="compass" /></span>
                   <span className="rtx"><b>« {q} »</b><i>Composer un voyage sur cette envie</i></span>
                 </button>
@@ -292,7 +350,7 @@ export default function Composer() {
           </div>
 
           <div className="cgo">
-            <button type="button" className="btn-search" onClick={() => router.push("/parcours")}>
+            <button type="button" className="btn-search" onClick={compose}>
               <span className="sheen" />
               <Icon name="compass" />
               Composer mon voyage
@@ -306,7 +364,10 @@ export default function Composer() {
           <span className="optrow" role="group" aria-labelledby="copts-q">
             {[["vol", "Les vols"], ["hotel", "L'hébergement"], ["act", "Les activités"]].map(([k, label]) => (
               <button type="button" key={k} className={"opt" + (o.include[k] ? " on" : "")} aria-pressed={o.include[k]}
-                onClick={() => patchOb((ob) => ({ include: { ...ob.include, [k]: !ob.include[k] } }))}>
+                onClick={() => patchOb((ob) => ({
+                  include: { ...ob.include, [k]: !ob.include[k] },
+                  fixed: { ...ob.fixed, scope: true },
+                }))}>
                 <span className="tick" aria-hidden="true"><Icon name="check" /></span>
                 {label}
               </button>

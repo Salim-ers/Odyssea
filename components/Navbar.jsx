@@ -1,13 +1,22 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Wordmark from "./Wordmark";
-import { useOdyssea } from "../lib/store";
+import { useOdyssea, LOCKED } from "../lib/store";
 
 /* Transparente sur la vidéo, verre clair une fois la scène passée. */
 export default function Navbar() {
   const [solid, setSolid] = useState(false);
-  const { user } = useOdyssea();
+  const { user, patchOb } = useOdyssea();
+  const router = useRouter();
+
+  /* Partir composer depuis l'accueil, c'est partir avec ce que la barre de
+     recherche affiche : le questionnaire n'a pas à le redemander. */
+  const compose = () => {
+    patchOb((ob) => ({ fixed: { ...ob.fixed, ...Object.fromEntries(LOCKED.map((k) => [k, true])) } }));
+    router.push("/parcours");
+  };
 
   useEffect(() => {
     const onScroll = () => setSolid(window.scrollY > window.innerHeight * 0.72);
@@ -28,7 +37,8 @@ export default function Navbar() {
           <a href="#galerie">Explorer</a>
           <a href="#methode">L&apos;exemple</a>
           {user && <Link className="link" href="/mes-voyages">Mes voyages</Link>}
-          <Link className="nav-cta" href="/parcours">Créer mon voyage</Link>
+          <a className="nav-cta" href="/parcours"
+            onClick={(e) => { e.preventDefault(); compose(); }}>Créer mon voyage</a>
         </div>
       </div>
     </nav>

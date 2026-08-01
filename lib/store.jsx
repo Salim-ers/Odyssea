@@ -28,9 +28,11 @@ const inSevenDays = (from, days) => {
 const today = () => new Date();
 
 export const initialBrief = () => ({
-  step: 0,
+  q: null,
   from: "Paris — CDG",
-  dest: "",
+  /* Plusieurs destinations : un voyage peut enchaîner des escales, et le
+     parcours répartit les nuits entre elles. */
+  dests: [],
   dep: inSevenDays(today(), 60),
   ret: inSevenDays(today(), 70),
   adults: 2,
@@ -40,13 +42,37 @@ export const initialBrief = () => ({
   occasion: null,
   include: { vol: true, hotel: true, act: true },
   booked: { vol: "non", hotel: "non", act: "non" },
+  /* Ce que la barre de recherche a arrêté. Le parcours ne le repose pas :
+     il le rappelle, modifiable. Sans ce drapeau, on ne saurait pas
+     distinguer une valeur choisie d'une valeur laissée par défaut. */
+  fixed: {},
+  split: {},
   stylePri: null,
   styleSec: null,
+  pace: null,
+  lodging: null,
+  ground: null,
   budget: "Confort",
   food: [],
   allerg: "",
+  care: [],
   prefs: [],
+  wish: "",
 });
+
+/* Quitter l'accueil pour le parcours, c'est valider ce que la barre de
+   recherche affiche : destinations, dates, équipage et périmètre y sont tous
+   sous les yeux. Le questionnaire les rappelle donc au lieu de les reposer.
+   Les dates n'échappent pas à la règle : elles sont visibles, même laissées
+   par défaut. */
+export const LOCKED = ["dest", "dates", "trav", "scope"];
+
+/** Les nuits disponibles, et celles déjà réparties entre les escales. */
+export const splitOf = (ob) => {
+  const total = nights(ob.dep, ob.ret);
+  const given = (ob.dests || []).reduce((sum, d) => sum + (ob.split?.[d] || 0), 0);
+  return { total, given, left: total - given };
+};
 
 export function OdysseaProvider({ children, initialUser = null }) {
   const [ob, setOb] = useState(initialBrief);

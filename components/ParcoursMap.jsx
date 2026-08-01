@@ -1,73 +1,68 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { loadPlaces, peekPlaces, norm } from "../lib/places";
+import { TILE, fitZoom, layout, routePath } from "../lib/tiles";
 import { frDate } from "../lib/store";
 
-/* La carte du parcours — une vraie carte.
+/* La carte du parcours.
 
-   Le fond est le trait de côte Natural Earth (110 m, domaine public), projeté
-   en équirectangulaire à la construction : à l'exécution il ne reste qu'un
-   chemin à dessiner, sans bibliothèque de cartographie.
+   Exactement le même fond que la carte de l'exemple : des tuiles
+   OpenStreetMap, au même traitement chromatique. On y voit le relief, les
+   villes et les routes — pas une silhouette.
 
-   Le départ vient du jeu d'aéroports, la destination d'un géocodage
-   Open-Meteo (gratuit, sans clé). Le cadrage passe de la vue monde au plan
-   serré sur la route à mesure que le questionnaire avance, et la route se
-   dessine par-dessus. */
+   Elle se resserre à mesure que le questionnaire avance : on part d'une vue
+   large et on gagne un niveau de zoom par étape, jusqu'au cadrage exact de la
+   route. Le tracé, lui, se dessine progressivement.
+
+   Le départ vient du jeu d'aéroports, les destinations d'un géocodage
+   Open-Meteo (gratuit, sans clé). */
 
 const GEOCODE = "https://geocoding-api.open-meteo.com/v1/search";
+const VW = 1000;
+const VH = 400;
 
-/* Le canevas du fond : lon [-180,180] → [0,2000], lat [90,-90] → [0,1000]. */
-const W = 2000;
-const H = 1000;
-const px = (lon) => ((lon + 180) / 360) * W;
-const py = (lat) => ((90 - lat) / 180) * H;
+/* Nombre de niveaux de zoom traversés entre la première et la dernière
+   question : assez pour qu'on voie la carte se resserrer, pas assez pour
+   qu'elle saute. */
+const APPROACH = 3;
 
-let worldCache = null;
-function loadWorld() {
-  if (worldCache) return Promise.resolve(worldCache);
-  return fetch("/data/world-land.json")
-    .then((r) => r.json())
-    .then((w) => (worldCache = w));
-}
-
-/* Une route qui se courbe vers le nord, comme une grande route aérienne. */
-function arcBetween(a, b) {
-  const x1 = px(a.lon), y1 = py(a.lat);
-  const x2 = px(b.lon), y2 = py(b.lat);
-  const mx = (x1 + x2) / 2;
-  const my = (y1 + y2) / 2;
-  const span = Math.hypot(x2 - x1, y2 - y1);
-  /* Le contrôle est décalé perpendiculairement, du côté du pôle le plus proche. */
-  const lift = Math.min(span * 0.22, 130) * (my < H / 2 ? -1 : 1);
-  return { d: `M${x1} ${y1} Q${mx} ${my + lift}, ${x2} ${y2}`, x1, y1, x2, y2 };
-}
-
-/* Cadre englobant les deux points, avec de la marge, borné au canevas. */
-function frameFor(pts, tightness) {
-  if (!pts.length) return { x: 0, y: 0, w: W, h: H };
-  const xs = pts.map((p) => px(p.lon));
-  const ys = pts.map((p) => py(p.lat));
-  const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
-  const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-  const need = Math.max((Math.max(...xs) - Math.min(...xs)) * 2.4, 430);
-
-  /* `tightness` va de 0 (vue monde) à 1 (plan serré sur la route). */
-  const w = W + (Math.min(need, W) - W) * tightness;
-  const h = (w * H) / W;
-  const x = Math.max(0, Math.min(W - w, cx - w / 2));
-  const y = Math.max(0, Math.min(H - h, cy - h / 2));
-  return { x, y, w, h };
+/* Deux escales voisines ont deux étiquettes au même endroit. On les décale
+   verticalement, dans l'ordre où on les rencontre. */
+const HALF = 17;
+function stagger(points) {
+  const placed = [];
+  return points.map((p) => {
+    let dy = 0;
+    for (let guard = 0; guard < 8; guard++) {
+      const clash = placed.some(
+        (q) => Math.abs(q.px - p.px) < 190 && Math.abs(q.y - (p.py + dy)) < HALF * 2
+      );
+      if (!clash) break;
+      /* On alterne au-dessus puis au-dessous, en s'éloignant. */
+      dy = dy <= 0 ? -dy + HALF * 2 : -dy;
+    }
+    placed.push({ px: p.px, y: p.py + dy });
+    return { ...p, dy };
+  });
 }
 
 export default function ParcoursMap({ ob, step, total }) {
-  const progress = step / (total - 1);
-  const [world, setWorld] = useState(worldCache);
+  const progress = total > 1 ? step / (total - 1) : 1;
+  const frame = useRef(null);
+  const [scale, setScale] = useState(0);
   const [places, setPlaces] = useState(() => peekPlaces());
-  const [dest, setDest] = useState(null);
-  const destCache = useRef(new Map());
+  const [found, setFound] = useState({});
+  const cache = useRef(new Map());
 
   useEffect(() => {
-    loadWorld().then(setWorld).catch(() => {});
+    const el = frame.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setScale(e.contentRect.width / VW));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
     if (!places) loadPlaces().then(setPlaces).catch(() => {});
   }, [places]);
 
@@ -77,123 +72,114 @@ export default function ParcoursMap({ ob, step, total }) {
     const code = (ob.from.match(/\b([A-Z]{3})\b/) || [])[1];
     if (code) {
       const hit = places.airports.find((a) => a.code === code);
-      if (hit) return { lat: hit.lat, lon: hit.lon, label: hit.city || hit.name };
+      if (hit) return { lat: hit.lat, lon: hit.lon, name: hit.city || hit.name, from: true };
     }
     const q = norm(ob.from.split("—")[0]);
     const hit = places.airports.find((a) => norm(a.city) === q);
-    return hit ? { lat: hit.lat, lon: hit.lon, label: hit.city } : null;
+    return hit ? { lat: hit.lat, lon: hit.lon, name: hit.city, from: true } : null;
   }, [places, ob.from]);
 
-  /* La destination est du texte libre : on la géocode, en différé et une
-     seule fois par saisie. */
+  /* Les destinations sont du texte libre : on les géocode, en différé et une
+     seule fois par libellé. Le résultat est mémorisé pour toute la session. */
+  const wanted = useMemo(
+    () => (ob.dests || []).map((d) => d.trim()).filter((d) => d.length >= 3),
+    [ob.dests]
+  );
+
   useEffect(() => {
-    const q = ob.dest.trim();
-    if (q.length < 3) return setDest(null);
-    if (destCache.current.has(q)) return setDest(destCache.current.get(q));
-
+    const todo = wanted.filter((q) => !cache.current.has(q));
+    if (!todo.length) return;
     let alive = true;
-    const timer = setTimeout(() => {
-      fetch(`${GEOCODE}?name=${encodeURIComponent(q)}&count=1&language=fr&format=json`)
-        .then((r) => r.json())
-        .then((data) => {
+    const timer = setTimeout(async () => {
+      for (const q of todo) {
+        try {
+          const r = await fetch(
+            `${GEOCODE}?name=${encodeURIComponent(q)}&count=1&language=fr&format=json`
+          );
+          const data = await r.json();
           const hit = data?.results?.[0];
-          const found = hit
-            ? { lat: hit.latitude, lon: hit.longitude, label: hit.name }
-            : null;
-          destCache.current.set(q, found);
-          if (alive) setDest(found);
-        })
-        .catch(() => {});
+          cache.current.set(q, hit ? { lat: hit.latitude, lon: hit.longitude, name: hit.name } : null);
+        } catch {
+          /* Réseau indisponible : on retentera à la frappe suivante. */
+        }
+      }
+      if (alive) setFound(Object.fromEntries(cache.current));
     }, 550);
-
     return () => {
       alive = false;
       clearTimeout(timer);
     };
-  }, [ob.dest]);
+  }, [wanted]);
 
-  const pins = [from, dest].filter(Boolean);
-  const route = from && dest ? arcBetween(from, dest) : null;
+  const stops = wanted.map((q) => (found[q] ?? cache.current.get(q)) || null).filter(Boolean);
+  const points = [from, ...stops].filter(Boolean);
 
-  /* On resserre dès que la destination est connue, puis progressivement. */
-  const tightness = dest ? Math.min(1, 0.78 + progress * 0.22) : 0;
-  const box = frameFor(pins, tightness);
-  const viewBox = `${box.x.toFixed(0)} ${box.y.toFixed(0)} ${box.w.toFixed(0)} ${box.h.toFixed(0)}`;
+  const view = useMemo(() => {
+    if (!points.length) return null;
+    const target = fitZoom(points, { width: VW, height: VH, pad: 64, max: 9 });
+    /* On arrive sur la destination : vue large au début, cadrage exact à la
+       fin. Le zoom est entier — c'est ce que sont les tuiles. */
+    const start = Math.max(1, target - APPROACH);
+    const zoom = start + Math.round((target - start) * progress);
+    const { tiles, points: pts } = layout({ points, width: VW, height: VH, zoom });
+    return { tiles, points: stagger(pts), route: routePath(pts, 0.2), zoom };
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [points.map((p) => `${p.lat},${p.lon}`).join("|"), progress]);
 
-  /* Les repères gardent une taille constante à l'écran quel que soit le zoom. */
-  const k = box.w / W;
-
-  const caption = !ob.dest.trim()
+  const named = stops.map((s) => s.name).join(" · ");
+  const caption = !wanted.length
     ? "Donnez une destination : la carte s'ouvrira dessus."
-    : !dest
+    : !stops.length
       ? "Recherche de la destination…"
       : !from
-        ? `${dest.label} — indiquez un aéroport de départ.`
+        ? `${named} — indiquez un aéroport de départ.`
         : step === total - 1
-          ? `${from.label} → ${dest.label} · votre route est tracée.`
-          : `${from.label} → ${dest.label} · ${frDate(ob.dep)} → ${frDate(ob.ret)}`;
+          ? `${from.name} → ${named} · votre route est tracée.`
+          : `${from.name} → ${named} · ${frDate(ob.dep)} → ${frDate(ob.ret)}`;
 
   return (
-    <figure className="pmap" style={{ "--p": progress }}>
-      <div className="pmap-frame">
-        <svg viewBox={viewBox} preserveAspectRatio="xMidYMid slice" role="img"
-          aria-label={route ? `Carte : ${from.label} vers ${dest.label}` : "Carte du monde"}>
-          <defs>
-            <linearGradient id="pm-route" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="var(--teal-2)" />
-              <stop offset="100%" stopColor="var(--amber)" />
-            </linearGradient>
-          </defs>
+    <figure className="pmap">
+      <div className="pmap-frame" ref={frame}>
+        {view && scale > 0 && (
+          <div className="tm-plane" style={{ width: VW, height: VH, transform: `scale(${scale})` }}>
+            <div className="tm-tiles" key={view.zoom}>
+              {view.tiles.map((t) => (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img key={t.key} src={t.url} alt="" aria-hidden="true"
+                  width={TILE} height={TILE} style={{ left: t.left, top: t.top }} />
+              ))}
+            </div>
 
-          {/* Parallèles et méridiens tous les 15° : une trame, pas un quadrillage. */}
-          <g className="pm-grid">
-            {Array.from({ length: 11 }, (_, i) => py(75 - i * 15)).map((y) => (
-              <line key={"h" + y} x1="0" y1={y} x2={W} y2={y} />
+            <svg className="tm-over" viewBox={`0 0 ${VW} ${VH}`} aria-hidden="true">
+              {view.route && (
+                <>
+                  <path className="tmr-halo" d={view.route} />
+                  {/* pathLength ramène le tracé à 1 : la fraction dessinée est
+                      exactement l'avancement du questionnaire. */}
+                  <path className="tmr drawing" d={view.route} pathLength="1"
+                    style={{ strokeDashoffset: 1 - Math.max(0.1, progress) }} />
+                </>
+              )}
+              {view.points.map((p, i) => (
+                <g key={i} className={"tmp" + (p.from ? " from" : " on")}>
+                  <circle cx={p.px} cy={p.py} r="18" className="tmp-halo" />
+                  <circle cx={p.px} cy={p.py} r="8" className="tmp-ring" />
+                  <circle cx={p.px} cy={p.py} r="3.5" className="tmp-dot" />
+                </g>
+              ))}
+            </svg>
+
+            {view.points.map((p, i) => (
+              <span key={i}
+                className={"tmp-tag" + (p.px / VW > 0.62 ? " flip" : "") + (p.from ? "" : " on")}
+                style={{ left: p.px, top: p.py + p.dy }}>
+                {!p.from && <b>{String(i).padStart(2, "0")}</b>}
+                {p.name}
+              </span>
             ))}
-            {Array.from({ length: 25 }, (_, i) => px(-180 + i * 15)).map((x) => (
-              <line key={"v" + x} x1={x} y1="0" x2={x} y2={H} />
-            ))}
-          </g>
-
-          {world && <path className="pm-land" d={world.d} />}
-
-          {route && (
-            <>
-              <path className="pm-route-ghost" d={route.d} />
-              <path className="pm-route" d={route.d} pathLength="1"
-                style={{ strokeWidth: 3 * k, strokeDashoffset: 1 - Math.max(0.12, progress) }} />
-            </>
-          )}
-
-          {from && (
-            <g className="pm-pin from">
-              <circle cx={px(from.lon)} cy={py(from.lat)} r={9 * k} className="pm-ring" strokeWidth={2.5 * k} />
-              <circle cx={px(from.lon)} cy={py(from.lat)} r={3.5 * k} className="pm-dot" />
-            </g>
-          )}
-          {dest && (
-            <g className="pm-pin to">
-              <circle cx={px(dest.lon)} cy={py(dest.lat)} r={20 * k} className="pm-halo" />
-              <circle cx={px(dest.lon)} cy={py(dest.lat)} r={9 * k} className="pm-ring" strokeWidth={2.5 * k} />
-              <circle cx={px(dest.lon)} cy={py(dest.lat)} r={3.5 * k} className="pm-dot" />
-            </g>
-          )}
-        </svg>
-
-        {/* Les étiquettes sont en HTML : elles restent nettes et lisibles
-            quelle que soit l'échelle de la carte. */}
-        {pins.map((p, i) => (
-          <span
-            key={i}
-            className={"pm-tag" + (i === 1 ? " to" : "")}
-            style={{
-              left: `${((px(p.lon) - box.x) / box.w) * 100}%`,
-              top: `${((py(p.lat) - box.y) / box.h) * 100}%`,
-            }}
-          >
-            {p.label}
-          </span>
-        ))}
+          </div>
+        )}
+        {!view && <div className="pmap-idle" aria-hidden="true" />}
       </div>
       <figcaption className="pmap-cap">{caption}</figcaption>
     </figure>
