@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import TripMap from "./TripMap";
+import TileMap from "./TileMap";
 import Reveal from "./Reveal";
 import { MAP, STOPS, DAYS, EXAMPLE, dayItems } from "../lib/example";
 import { kindOf, KINDS } from "../lib/kinds";
@@ -10,15 +10,15 @@ import { Icon } from "../lib/icons";
 /* La vitrine de l'accueil : une carte à gauche, le programme jour par jour à
    droite, et le choix de l'escale qui commande les deux.
 
-   Deux sources possibles, une seule mise en page. Tant qu'aucun voyage n'a
-   été composé, on montre l'exemple malaisien et sa carte OpenStreetMap. Dès
-   qu'un voyage existe en base, la vitrine bascule dessus et la carte est
-   tracée depuis les coordonnées réelles de ses étapes. */
+   Deux sources possibles, une seule mise en page. Par défaut, l'exemple
+   malaisien et sa carte OpenStreetMap. Si un voyage est désigné comme
+   vitrine, elle bascule dessus : mêmes tuiles OpenStreetMap, assemblées à la
+   volée pour ses étapes. */
 
 const fr = (iso) =>
   new Date(iso + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
 
-export default function Showcase({ trip, worldPath }) {
+export default function Showcase({ trip }) {
   const model = trip ? fromTrip(trip) : fromExample();
   const [stopKey, setStopKey] = useState(model.stops[0]?.key);
 
@@ -69,7 +69,7 @@ export default function Showcase({ trip, worldPath }) {
               </div>
             ) : (
               /* Un voyage composé : la carte est tracée depuis ses coordonnées. */
-              <TripMap stops={model.geo} worldPath={worldPath} active={stop?.key} />
+              <TileMap stops={model.geo} active={stop?.key} />
             )}
 
             <div className="map-legend">
@@ -222,8 +222,8 @@ function fromTrip(trip) {
       `${days.length} journées écrites`,
     ],
     credit: plan.sources?.length
-      ? `Composé à partir de ${plan.sources.length} sources consultées en direct. Fond de carte © Natural Earth.`
-      : "Fond de carte © Natural Earth.",
+      ? `Composé à partir de ${plan.sources.length} sources consultées en direct. Fond de carte © OpenStreetMap.`
+      : "Fond de carte © OpenStreetMap.",
     footnote:
       "Avec les vols, l'hébergement, le budget et les pièges de l'itinéraire.",
   };
