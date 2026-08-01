@@ -236,12 +236,17 @@ export default function Composer() {
                 {dests.length > 1 ? `Destinations · ${dests.length} escales` : "Destination"}
               </label>
               <span className="destbox">
-                {dests.map((d) => (
-                  <span className="dtag" key={d}>
-                    {d}
-                    <button type="button" aria-label={`Retirer ${d}`} onClick={() => dropDest(d)}>×</button>
+                {/* Une escale tient dans le champ. À partir de deux, les noms
+                    se tronqueraient : on affiche le décompte, la liste
+                    complète étant juste en dessous et dans le panneau. */}
+                {dests.length === 1 && (
+                  <span className="dtag">
+                    {dests[0]}
+                    <button type="button" aria-label={`Retirer ${dests[0]}`}
+                      onClick={() => dropDest(dests[0])}>×</button>
                   </span>
-                ))}
+                )}
+                {dests.length > 1 && <span className="dtag more">{dests.length} escales</span>}
                 <input id="c-dest" ref={destInput} className="val" value={destDraft} autoComplete="off"
                   placeholder={dests.length ? "Ajouter une escale…" : "Une ville, un pays, une envie…"}
                   role="combobox" aria-expanded={open === "dest"} aria-controls="c-dest-list"
@@ -264,6 +269,16 @@ export default function Composer() {
                 {q ? "Résultats" : dests.length ? "Ajouter une escale" : "Destinations les plus demandées"}
                 {!q && <em>Enchaînez plusieurs escales : Odyssea répartira les nuits</em>}
               </div>
+              {dests.length > 0 && (
+                <div className="cpanel-chosen">
+                  {dests.map((d) => (
+                    <span className="dtag" key={d}>
+                      {d}
+                      <button type="button" aria-label={`Retirer ${d}`} onClick={() => dropDest(d)}>×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
               {destList.map((d, i) => (
                 <button type="button" key={(d.kind || "") + d.name + (d.cc || "")} role="option" aria-selected={cursor === i}
                   className={"row" + (cursor === i ? " cur" : "")}

@@ -128,9 +128,13 @@ button.chip.on{background:#061E2A;color:var(--cream)}
     radial-gradient(900px 520px at 88% -10%,rgba(224,129,60,.10),transparent 62%),
     radial-gradient(700px 480px at -6% 8%,rgba(95,179,191,.10),transparent 60%),
     linear-gradient(180deg,var(--paper) 0%,var(--paper-2) 46%)}
+/* Trois colonnes, celle du milieu à la taille de la marque : c'est la seule
+   façon que l'emblème soit vraiment centré, quelle que soit la largeur du
+   rappel à droite. */
 .onb-bar{position:sticky;top:0;z-index:40;padding:14px clamp(20px,3vw,44px);
-  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:14px;
   background:rgba(6,30,42,.94);backdrop-filter:blur(20px);color:var(--cream)}
+.onb-bar .onb-recap,.app-bar .right{justify-self:end}
 .onb-bar .wordmark{color:var(--cream)}
 .onb-recap{display:flex;align-items:center;gap:10px;padding:8px 16px;border-radius:999px;
   border:1px solid rgba(252,251,248,.16);background:rgba(252,251,248,.06);
@@ -385,7 +389,7 @@ button.chip.on{background:#061E2A;color:var(--cream)}
   var(--paper-2)}
 .gen-bar .onb-recap{justify-self:end}
 .gen-bar{position:sticky;top:0;z-index:40;padding:14px clamp(20px,3vw,44px);
-  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;
+  display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;
   background:rgba(6,30,42,.96);backdrop-filter:blur(20px);color:var(--cream)}
 .gen-wrap{max-width:940px;margin:0 auto;padding:clamp(40px,7vh,72px) clamp(20px,3vw,44px) 90px}
 
@@ -435,7 +439,9 @@ button.chip.on{background:#061E2A;color:var(--cream)}
 
 /* ============================ APP (clair) ============================ */
 .app{min-height:100vh;background:var(--paper-2);padding-bottom:110px}
-.app-bar{position:sticky;top:0;z-index:60;padding:14px clamp(20px,3vw,44px);display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(6,30,42,.94);backdrop-filter:blur(20px);color:var(--cream)}
+.app-bar{position:sticky;top:0;z-index:60;padding:14px clamp(20px,3vw,44px);
+  display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;
+  background:rgba(6,30,42,.94);backdrop-filter:blur(20px);color:var(--cream)}
 .app-bar .brand span{color:var(--cream);font-size:12px}
 .app-bar .right{display:flex;align-items:center;gap:12px}
 .app-bar .saved{font-size:12.5px;color:rgba(252,251,248,.55)}
@@ -714,6 +720,23 @@ button.chip.on{background:#061E2A;color:var(--cream)}
   #chatpanel{bottom:152px}
   .screen{padding-top:24px}
 }
+
+/* ---------- Barres intérieures sur petit écran ----------
+   Le rappel du brief passait sous la marque, et les actions du voyage
+   débordaient du bord droit. Sur mobile, l'essentiel tient : la marque et
+   une action. Le reste est répété dans la page. */
+@media(max-width:760px){
+  .onb-bar .onb-recap,.gen-bar .onb-recap{display:none}
+  .onb-bar,.gen-bar{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
+  .app-bar{padding:12px 14px;gap:8px}
+  .app-bar .right{gap:8px}
+  .app-bar .right .btn{padding:8px 13px;font-size:12px}
+  .app-bar .right .btn svg{display:none}
+}
+@media(max-width:430px){
+  .app-bar .right .btn-line{display:none}
+}
+
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
   html{scroll-behavior:auto}
@@ -923,10 +946,14 @@ button.ctrigger{cursor:pointer}
 /* ---------- Champ destination : plusieurs escales dans un seul champ ----------
    Les escales retenues vivent dans le champ, comme des destinataires. Le
    champ de saisie reste à la suite, prêt pour la suivante. */
-.destbox{display:flex;align-items:center;gap:7px;min-width:0;overflow:hidden}
-.destbox .dtag{background:rgba(255,255,255,.14);color:#fff;padding:4px 6px 4px 11px;font-size:12.5px}
-.destbox .dtag button{width:16px;height:16px;font-size:12px;background:rgba(255,255,255,.16)}
-.destbox input.val{flex:1;min-width:70px}
+.destbox{display:flex;align-items:center;gap:6px;min-width:0}
+.destbox .dtag{flex:none;max-width:60%;background:rgba(255,255,255,.14);color:#fff;
+  padding:4px 5px 4px 10px;font-size:12.5px;overflow:hidden;text-overflow:ellipsis}
+.destbox .dtag button{width:16px;height:16px;font-size:12px;background:rgba(255,255,255,.16);flex:none}
+.destbox .dtag.more{padding:4px 11px;color:var(--amber-hi);background:rgba(224,129,60,.18)}
+/* La saisie garde toujours de quoi écrire : c'est elle qui rétrécit en
+   dernier, pas l'inverse. */
+.destbox input.val{flex:1 1 auto;min-width:56px}
 /* Le champ prend la place qu'il faut : deux escales ne doivent pas écraser
    la troisième colonne. */
 .cfield.grow{min-width:0}
@@ -975,8 +1002,15 @@ button.ctrigger{cursor:pointer}
 .cpanel::-webkit-scrollbar{width:8px}
 .cpanel::-webkit-scrollbar-thumb{background:rgba(9,24,45,.16);border-radius:8px;border:2px solid var(--paper-2)}
 .cpanel-hd{padding:9px 14px 7px;font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted-2);
-  display:flex;align-items:baseline;justify-content:space-between;gap:12px}
-.cpanel-hd em{font-style:normal;font-family:var(--dm);font-size:11px;letter-spacing:0;text-transform:none;color:var(--muted-2);opacity:.85;text-align:right}
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.cpanel-hd em{font-style:normal;font-family:var(--dm);font-size:11px;letter-spacing:0;text-transform:none;color:var(--muted-2);opacity:.85;text-align:right;
+  flex:1;min-width:150px}
+
+/* Les escales déjà retenues, listées dans le panneau : c'est là qu'on peut
+   les retirer quand le champ est trop étroit pour toutes les montrer. */
+.cpanel-chosen{display:flex;flex-wrap:wrap;gap:7px;padding:4px 14px 12px;
+  border-bottom:1px solid rgba(9,24,45,.07)}
+.cpanel-chosen .dtag{background:var(--navy);color:var(--cream)}
 .cpanel-hd.sub{padding-top:4px}
 .cpanel-empty{padding:14px;font-size:13px;color:var(--muted-2)}
 .cpanel-note{padding:6px 14px 12px;font-size:12.5px;line-height:1.55;color:var(--muted-2)}
@@ -1418,7 +1452,7 @@ body[data-composer="open"] .cookiebar{opacity:0;visibility:hidden;pointer-events
    colonnes égales : la marque reste au milieu quelle que soit la largeur de
    ce qui l'entoure.
    ============================================================ */
-.onb-bar,.app-bar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;
+.onb-bar,.app-bar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:14px;
   padding-block:12px}
 .onb-bar-side{display:block}
 .onb-bar .onb-recap,.app-bar .right{justify-self:end}
@@ -1431,10 +1465,19 @@ body[data-composer="open"] .cookiebar{opacity:0;visibility:hidden;pointer-events
 .wordmark.stacked .wm-lam{font-size:31px}
 
 @media(max-width:760px){
-  .onb-bar,.app-bar{grid-template-columns:0 auto 1fr}
-  .wordmark.stacked .wm-mark{height:34px}
-  .wordmark.stacked .wm-letters,.wordmark.stacked .wm-lam{font-size:20px}
-  .wordmark.stacked .wm-letters{letter-spacing:.26em}
+  /* Une grille ne peut pas centrer la marque quand la colonne de droite est
+     plus large que celle de gauche : elle s'élargit et pousse le milieu. On
+     sort donc la marque du flux pour la caler sur l'axe de la page. */
+  /* La marque étant hors du flux, la barre n'a plus rien pour se donner une
+     hauteur : on la lui impose, sinon la marque déborde par-dessus la page. */
+  .onb-bar,.app-bar,.gen-bar{display:flex;justify-content:flex-end;align-items:center;
+    position:sticky;min-height:78px}
+  .onb-bar .wordmark,.app-bar .wordmark,.gen-bar .wordmark{position:absolute;left:50%;transform:translateX(-50%)}
+  .onb-bar-side{display:none}
+  .wordmark.stacked{gap:6px}
+  .wordmark.stacked .wm-mark{height:28px}
+  .wordmark.stacked .wm-letters,.wordmark.stacked .wm-lam{font-size:17px}
+  .wordmark.stacked .wm-letters{letter-spacing:.24em}
 }
 
 /* Ce que la vitrine montre tant qu'aucun voyage n'a été composé. */
