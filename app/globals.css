@@ -1552,3 +1552,113 @@ body[data-composer="open"] .cookiebar{opacity:0;visibility:hidden;pointer-events
 .tmp-tag b{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--amber-deep)}
 .tmp-tag.on{background:var(--navy);border-color:var(--navy);color:#fff}
 .tmp-tag.on b{color:var(--amber-hi)}
+
+/* ============================ ÉCRAN D'ATTENTE ============================
+   L'emblème porte déjà un rivage : on le prolonge, et la mer monte sous lui.
+   Trois houles à des vitesses différentes — c'est leur décalage qui fait une
+   eau vivante plutôt qu'un motif qui défile.
+
+   Rien à télécharger : un PNG déjà en cache et des tracés. Aucun script non
+   plus, pour un écran censé s'afficher avant tout le reste. */
+
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+.splash{position:fixed;inset:0;z-index:200;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#02121A 0%,#06293A 46%,#0C4657 100%);
+  /* Une navigation instantanée ne doit pas provoquer un éclair : l'écran
+     n'apparaît qu'au-delà du sixième de seconde. */
+  animation:splashIn .45s var(--ease) .16s both}
+@keyframes splashIn{from{opacity:0}to{opacity:1}}
+
+/* Le ciel, jamais tout à fait immobile. */
+.splash-sky{position:absolute;inset:0;
+  background:radial-gradient(120% 70% at 50% 4%,rgba(95,179,191,.18),transparent 60%);
+  animation:drift 11s ease-in-out infinite}
+
+/* Le soleil couchant, posé sur l'horizon — c'est-à-dire au sommet de la mer.
+   Son animation lui est propre : `breathe` écrit `transform` et effacerait le
+   centrage, ce qui envoyait la lueur dans le coin droit. */
+.splash-sun{position:absolute;left:50%;bottom:34vh;width:min(760px,120vw);height:min(760px,120vw);
+  transform:translate(-50%,50%);border-radius:50%;
+  background:radial-gradient(circle,rgba(255,206,150,.46),rgba(224,129,60,.16) 32%,transparent 72%);
+  /* En simple opacité, une lueur claire voile le fond et vire au gris. En
+     mode screen elle s ajoute à lui : elle éclaire au lieu de couvrir. */
+  mix-blend-mode:screen;
+  animation:sunBreathe 7s ease-in-out infinite}
+@keyframes sunBreathe{
+  0%,100%{transform:translate(-50%,50%) scale(1);opacity:.9}
+  50%{transform:translate(-50%,50%) scale(1.06);opacity:1}
+}
+
+.splash-mark{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;
+  gap:18px;margin-bottom:clamp(60px,16vh,150px);
+  animation:splashFloat 6.5s ease-in-out infinite}
+@keyframes splashFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.splash-mark img{height:clamp(112px,19vh,186px);width:auto;opacity:.97;
+  filter:drop-shadow(0 22px 46px rgba(2,18,26,.7))}
+
+.splash-word{display:inline-flex;align-items:baseline;color:var(--cream);line-height:1}
+.splash-word .l,.splash-word .v{font-family:var(--serif);font-weight:400;
+  font-size:clamp(26px,3.8vw,38px);text-transform:uppercase;font-feature-settings:"liga" 0}
+.splash-word .l{letter-spacing:.34em}
+/* Le même V retourné que dans le mot-symbole : mêmes empattements. */
+.splash-word .v{display:inline-block;transform:rotate(180deg) translateY(.012em)}
+
+.splash-note{font-family:var(--mono);font-size:10px;letter-spacing:.26em;text-transform:uppercase;
+  color:rgba(252,251,248,.52)}
+.splash-note::after{content:"…";display:inline-block;width:1.7em;text-align:left;
+  overflow:hidden;vertical-align:bottom;animation:splashDots 1.8s steps(4,end) infinite}
+@keyframes splashDots{from{width:0}to{width:1.7em}}
+
+/* ---------- La mer ---------- */
+.splash-sea{position:absolute;left:0;right:0;bottom:0;height:min(46vh,380px);z-index:2}
+.splash-sea .h{position:absolute;left:0;bottom:0;width:200%;display:block;will-change:transform}
+/* Chaque houle décale son groupe d'exactement une période : la boucle ne se
+   voit pas. Des durées sans multiple commun évitent qu'elles se resynchronisent. */
+.splash-sea .h g{animation:houle linear infinite}
+@keyframes houle{from{transform:translateX(0)}to{transform:translateX(-480px)}}
+
+.splash-sea .h3{height:100%}
+.splash-sea .h2{height:78%}
+.splash-sea .h1{height:52%}
+.splash-sea .h3 g{animation-duration:19s}
+.splash-sea .h2 g{animation-duration:13s;animation-direction:reverse}
+.splash-sea .h1 g{animation-duration:8s}
+.splash-sea .h3 path{fill:#0A3B4B}
+.splash-sea .h2 path{fill:#0F5163}
+.splash-sea .h1 path{fill:#17697C}
+
+/* Le reflet du soleil sur l'eau : une traîne qui s'élargit en descendant,
+   comme une vraie route de lumière. C'est ce détail qui fait la mer, plutôt
+   que des courbes empilées. */
+/* Un dégradé vertical laisse des bords francs à gauche et à droite : la
+   traîne se lisait comme un rectangle posé sur l'eau. Une ellipse s'éteint
+   dans toutes les directions. */
+.splash-sea .glint{position:absolute;left:50%;top:-10%;bottom:0;width:min(420px,58vw);
+  transform:translateX(-50%);mix-blend-mode:screen;pointer-events:none;
+  background:radial-gradient(ellipse 46% 100% at 50% 0%,rgba(255,206,150,.34),transparent 74%);
+  filter:blur(16px);animation:glint 5s ease-in-out infinite}
+@keyframes glint{
+  0%,100%{transform:translateX(-50%) scaleX(1);opacity:.85}
+  50%{transform:translateX(-50%) scaleX(1.18);opacity:1}
+}
+
+/* Un liseré clair sur la crête la plus proche : l'écume attrape la lumière. */
+.splash-sea .foam{position:absolute;left:0;right:0;bottom:0;height:52%;
+  background:linear-gradient(180deg,transparent,rgba(95,179,191,.20))}
+
+@media(max-width:620px){
+  .splash-sea{height:min(40vh,300px)}
+  .splash-sun{bottom:30vh}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .splash,.splash-sky,.splash-sun,.splash-mark,.splash-sea .h g,.splash-sea .glint,
+  .splash-note::after{animation:none}
+  .splash-sea .glint{transform:translateX(-50%)}
+  .splash{opacity:1}
+  .splash-sun{transform:translate(-50%,50%)}
+  .splash-note::after{width:1.7em}
+}
