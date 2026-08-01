@@ -101,7 +101,7 @@ export function ComparePlans() {
   return (
     <>
       <h3>Jour 4 — plan initial vs plan B météo</h3>
-      <p className="note">Rien ne saute : les jardins passent au matin (au sec), le musée national couvre l&apos;averse. Dhuhr à Masjid Jamek conservé.</p>
+      <p className="note">Rien ne saute : les jardins passent au matin (au sec), le musée national couvre l&apos;averse. Merdeka Square reste au programme, sous les arcades.</p>
       <div className="grid2" style={{ marginTop: 14, gap: 12 }}>
         {col("PLAN INITIAL", DAY4A)}
         {col("PLAN B · SURLIGNÉ = DÉPLACÉ", DAY4B)}

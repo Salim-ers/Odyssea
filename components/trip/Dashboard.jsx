@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { SCENARIOS, SCOREROWS, TABS, PRAYER, photoOf, stepCount } from "../../lib/data";
+import { SCENARIOS, SCOREROWS, TABS, SUNSET, photoOf, stepCount } from "../../lib/data";
 import { useOdyssea } from "../../lib/store";
 import { Icon, Chip, PLANE } from "../../lib/icons";
 import { Screen, WeatherAlert } from "./Chrome";
@@ -35,14 +35,14 @@ function Bar({ pct }) {
 
 const CARDS = [
   ["itin", "list", "Itinéraire jour par jour", "étapes, trajets et affluence compris"],
-  ["vols", "plane", "Vols notés & comparés", "4 options, repas halal certifié sur chacune"],
+  ["vols", "plane", "Vols notés & comparés", "4 options, notées sur six critères"],
   ["hotels", "bed", "Hôtels justifiés", "3 adresses — pourquoi elles, et à savoir"],
   ["loc", "car", "Location auto & scooter", "Langkawi motorisée, conduite à gauche expliquée"],
-  ["restos", "food", "Tables vérifiées", "10 adresses, zéro alcool"],
+  ["restos", "food", "Tables vérifiées", "10 adresses, du hawker à la grande table"],
   ["meteo", "cloud", "Météo qui décide avec vous", "12 jours, plan B jamais automatique"],
   ["budget", "wallet", "Budget en vrai", "Confirmé vs estimé, au centime honnête"],
   ["check", "shield", "Check-list & regrets", "Passeport, eSIM, permis — 3 pièges évités"],
-  ["valise", "bag", "Valise intelligente", "Générée pour la mousson et les mosquées"],
+  ["valise", "bag", "Valise intelligente", "Générée pour la mousson et 3 h de marche par jour"],
 ];
 
 export default function Dashboard({ setTab, openChat }) {
@@ -54,7 +54,7 @@ export default function Dashboard({ setTab, openChat }) {
   return (
     <>
       <header className="dash-band">
-        <span className="pano" style={{ backgroundImage: `url(${photoOf("lgk")})` }} />
+        <span className="pano" style={{ backgroundImage: `url(${photoOf("kl")})` }} />
         <span className="veil" />
         <svg className="routes" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
           <path d="M-20 236 C 260 202 460 248 720 220 C 960 192 1180 232 1460 198" fill="none" stroke="rgba(252,251,248,.22)" strokeWidth="1" />
@@ -192,16 +192,19 @@ export default function Dashboard({ setTab, openChat }) {
             <div className="dna-row" style={{ alignItems: "flex-start" }}>
               <span style={{ paddingTop: 6 }}>Envies</span>
               <div className="intwrap">
-                {[["halal", "Gastronomie"], ["nature", "Nature"], ["plage", "Plage"], ["culture", "Culture & mosquées"], ["photo", "Photo"], ["bienetre", "Bien-être"]].map(([k, label]) => (
+                {[["gastro", "Gastronomie"], ["nature", "Nature"], ["plage", "Plage"], ["culture", "Culture & patrimoine"], ["photo", "Photo"], ["bienetre", "Bien-être"]].map(([k, label]) => (
                   <button key={k} className={"chip" + (S.dna.ints.includes(k) ? " on" : "")}
                     aria-pressed={S.dna.ints.includes(k)} onClick={() => actions.toggleInterest(k)}>{label}</button>
                 ))}
               </div>
             </div>
             <hr className="rule" />
-            <div className="kicker gold">Prières aujourd&apos;hui · Kuala Lumpur</div>
+            <div className="kicker gold">Lumière du jour · Kuala Lumpur</div>
             <div className="prayer">
-              {Object.entries(PRAYER.kl).map(([k, v]) => <div key={k}>{k}<b>{v}</b></div>)}
+              <div>Lever<b>07:04</b></div>
+              <div>Golden hour<b>18:20</b></div>
+              <div>Coucher<b>{SUNSET.kl}</b></div>
+              <div>Nuit<b>19:32</b></div>
             </div>
             <p className="note" style={{ marginTop: 9 }}>Horaires estimés — chaque journée affiche ceux de sa ville.</p>
           </div>

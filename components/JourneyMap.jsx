@@ -1,14 +1,18 @@
 "use client";
 import { useState } from "react";
-import { DAYS, STOPS, dayItems } from "../lib/data";
+import { DAYS, MAP, STOPS, dayItems } from "../lib/data";
 import { useOdyssea } from "../lib/store";
+import { Icon } from "../lib/icons";
 import Reveal from "./Reveal";
 
-/* Carte géante : trois escales, le programme jour par jour à côté. */
+/* Carte réelle (fond OpenStreetMap) : trois escales, le programme jour par
+   jour à côté. Les repères et le tracé sont posés en SVG aux coordonnées
+   projetées de l'image — ils tombent donc exactement sur les villes. */
 export default function JourneyMap() {
   const [stop, setStop] = useState("kl");
   const { S } = useOdyssea();
   const days = DAYS.filter((d) => d.c === stop);
+  const current = STOPS.find((s) => s.k === stop);
 
   return (
     <section className="mapsec" id="methode">
@@ -24,59 +28,80 @@ export default function JourneyMap() {
 
         <div className="map-grid">
           <Reveal className="map-wrap">
-            <svg viewBox="0 0 300 420" role="img" aria-label="Carte du voyage en Malaisie">
-              <g className="sea-grid">
-                {Array.from({ length: 8 }, (_, i) => <line key={"h" + i} x1="0" y1={i * 56} x2="300" y2={i * 56} />)}
-                {Array.from({ length: 6 }, (_, i) => <line key={"v" + i} x1={i * 60} y1="0" x2={i * 60} y2="420" />)}
-              </g>
-              <path className="land" d="M137 22 C 168 44 182 78 186 118 C 190 158 206 186 214 218 C 222 252 214 292 196 330 C 180 364 168 396 152 404 C 140 410 134 392 132 366 C 130 336 120 316 112 292 C 102 262 96 230 96 196 C 96 156 104 112 114 74 C 120 50 128 30 137 22 Z" />
-              <path className="land" d="M96 152 C 106 148 114 158 114 172 C 114 188 104 198 94 194 C 84 190 82 160 96 152 Z" />
-              <path className="land" d="M52 78 C 62 72 74 80 74 92 C 74 104 62 112 52 106 C 42 100 42 84 52 78 Z" />
-              <path className="land" d="M40 104 C 46 101 52 105 52 110 C 52 116 45 119 40 115 C 35 112 35 107 40 104 Z" />
-              <path className="route" d="M150 322 C 128 280 112 224 104 168" />
-              <path className="route" d="M104 168 C 92 140 76 114 62 92" />
-              {STOPS.map((st) => (
-                <g key={st.k} className={"mpin" + (stop === st.k ? " on" : "")} role="button" tabIndex={0}
-                  aria-label={st.name} onClick={() => setStop(st.k)}
-                  onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setStop(st.k)}>
-                  <circle className="halo" cx={st.x} cy={st.y} r="18" />
-                  <circle className="core" cx={st.x} cy={st.y} r="5.5" />
-                  <text x={st.x + 16} y={st.y + 4}>{st.name}</text>
-                </g>
-              ))}
-            </svg>
+            <div className="map-canvas">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="map-img" src={MAP.src} width={MAP.w} height={MAP.h}
+                alt="Carte de la péninsule malaisienne : Langkawi, Penang et Kuala Lumpur"
+                loading="lazy" decoding="async" draggable="false" />
+              <svg className="map-pins" viewBox={`0 0 ${MAP.w} ${MAP.h}`} aria-hidden="true">
+                {MAP.routes.map((d, i) => <path key={i} className="route" d={d} />)}
+                {STOPS.map((st) => (
+                  <g key={st.k} className={"mpin" + (stop === st.k ? " on" : "")}>
+                    <circle className="halo" cx={st.x} cy={st.y} r="22" />
+                    <circle className="core" cx={st.x} cy={st.y} r="7" />
+                  </g>
+                ))}
+              </svg>
+              {/* Les repères cliquables sont de vrais boutons HTML, posés en absolu. */}
+              {STOPS.map((st, i) => {
+                /* Passé la moitié droite, l'étiquette bascule à gauche du repère
+                   pour ne pas déborder de la carte. */
+                const flip = st.x / MAP.w > 0.55;
+                return (
+                  <button type="button" key={st.k}
+                    className={"mlabel" + (flip ? " flip" : "") + (stop === st.k ? " on" : "")}
+                    style={{ left: `${(st.x / MAP.w) * 100}%`, top: `${(st.y / MAP.h) * 100}%` }}
+                    aria-pressed={stop === st.k} onClick={() => setStop(st.k)}>
+                    <b>0{i + 1}</b>{st.name}<i>{st.n}</i>
+                  </button>
+                );
+              })}
+            </div>
             <div className="map-legend">
               <span>3 escales · 2 vols intérieurs</span>
               <span>1 100 km parcourus</span>
             </div>
+            <p className="map-credit">Fond de carte © OpenStreetMap</p>
           </Reveal>
 
-          <div>
-            <div className="stopbar">
+          <div className="map-side">
+            <div className="stopbar" role="tablist" aria-label="Escales">
               {STOPS.map((st, i) => (
-                <button key={st.k} className={"stopbtn" + (stop === st.k ? " on" : "")} onClick={() => setStop(st.k)}>
-                  <b>0{i + 1}</b>{st.name} · {st.n}
+                <button type="button" key={st.k} role="tab" aria-selected={stop === st.k}
+                  className={"stopbtn" + (stop === st.k ? " on" : "")} onClick={() => setStop(st.k)}>
+                  <b>0{i + 1}</b>{st.name}<span>{st.n}</span>
                 </button>
               ))}
             </div>
+
+            <div className="stopnow">
+              <Icon name="map" />
+              <span>
+                <b>{current?.name}</b>
+                {days.length} journée{days.length > 1 ? "s" : ""} détaillée{days.length > 1 ? "s" : ""} ·{" "}
+                {days.reduce((a, d) => a + dayItems(d, S.planApplied).length, 0)} étapes
+              </span>
+            </div>
+
             <div className="dayscroll">
               {days.map((d) => (
-                <div className="dayblock" key={d.n}>
-                  <div className="dhead">
-                    <span className="dnum">JOUR {d.n} · {d.d}</span>
+                <article className="dayblock" key={d.n}>
+                  <header className="dhead">
+                    <span className="dnum">Jour {d.n}</span>
                     <h4>{d.t}</h4>
-                  </div>
+                    <span className="ddate">{d.d}</span>
+                  </header>
                   {dayItems(d, S.planApplied).map((it) => (
                     <div className="dayline" key={it.id}>
                       <span className="t">{it.t}</span>
-                      <div>
+                      <div className="dtx">
                         <b>{it.f}</b>
                         {it.s && <span>{it.s}</span>}
-                        {it.why && <div className="why">{it.why}</div>}
+                        {it.why && <p className="why">{it.why}</p>}
                       </div>
                     </div>
                   ))}
-                </div>
+                </article>
               ))}
             </div>
           </div>

@@ -29,11 +29,11 @@ export default function Onboarding() {
   const steps = [
     <div key="0">
       <h2 className="ob-q">Où avez-vous envie d&apos;aller&nbsp;?</h2>
-      <p className="ob-sub">La Malaisie est notre démo complète — le reste arrive.</p>
+      <p className="ob-sub">Une ville, un pays, ou simplement une envie — on part de là.</p>
       <input className="ob-input" style={{ marginTop: 26 }} value={o.dest} aria-label="Destination"
-        placeholder="Malaisie, Istanbul, du soleil…" onChange={(e) => patchOb(() => ({ dest: e.target.value }))} />
+        placeholder="Malaisie, Lisbonne, du soleil…" onChange={(e) => patchOb(() => ({ dest: e.target.value }))} />
       <div className="chiprow">
-        {["Malaisie", "Turquie", "Maroc", "Oman", "Indonésie"].map((d) => (
+        {["Malaisie", "Japon", "Portugal", "Maroc", "Indonésie"].map((d) => (
           <button key={d} className={"d-chip" + (o.dest === d ? " on" : "")} onClick={() => patchOb(() => ({ dest: d }))}>{d}</button>
         ))}
       </div>
@@ -132,12 +132,11 @@ export default function Onboarding() {
     </div>,
     <div key="6">
       <h2 className="ob-q">Côté assiette&nbsp;?</h2>
-      <p className="ob-sub">Odyssea n&apos;orientera jamais vers l&apos;alcool, les bars ou les boîtes de nuit — c&apos;est la maison qui l&apos;exclut, pour tout le monde.</p>
+      <p className="ob-sub">Vos règles, jamais négociées. Chaque table proposée les respecte.</p>
       <div className="chiprow">
-        {["Halal strict", "Végétarien", "Végan", "Sans épices fortes", "Sans fruits de mer"].map((v) => (
+        {["Aucune restriction", "Végétarien", "Végan", "Sans gluten", "Sans épices fortes", "Sans fruits de mer"].map((v) => (
           <button key={v} className={"d-chip" + (o.food.includes(v) ? " on" : "")} onClick={() => toggleList("food", v)}>{v}</button>
         ))}
-        <span className="d-chip locked"><Icon name="check" />Sans alcool · toujours</span>
       </div>
       <div style={{ marginTop: 22 }}>
         <label className="ob-sub" htmlFor="ob-allerg" style={{ display: "block", marginBottom: 2 }}>Allergies ou intolérances (optionnel)</label>

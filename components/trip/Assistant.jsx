@@ -5,10 +5,10 @@ import { useOdyssea } from "../../lib/store";
 import { Icon } from "../../lib/icons";
 
 const CANNED = [
-  [/halal|manger|resto|dîner|table|soir/i, "Ce soir à KL, deux valeurs sûres : Kampung Baru pour le nasi lemak légendaire de Wanjo (5-8 €, un vrai moment local), ou le food court de Suria KLCC si vous voulez la climatisation. Les deux sont à moins de 15 minutes en Grab du Traders, et la mosquée de Kampung Baru est sur place pour l'Isha."],
+  [/manger|resto|dîner|table|soir/i, "Ce soir à KL, deux valeurs sûres : Kampung Baru pour le nasi lemak légendaire de Wanjo (5-8 €, un vrai moment local), ou le food court de Suria KLCC si vous voulez la climatisation. Les deux sont à moins de 15 minutes en Grab du Traders, et les étals servent jusque tard."],
   [/pleut|pluie|jour 4|plan b|météo/i, "Pour le jour 4, l'averse est annoncée entre 14 h et 17 h. Le plan B garde exactement les mêmes lieux : jardins botaniques dès 9 h, déjeuner à Brickfields, musée national au sec pendant la pluie, puis Thean Hou au coucher du soleil une fois le ciel rincé. Budget inchangé. Appliquez-le depuis l'alerte du tableau de bord — réversible à tout moment."],
   [/économis|budget|moins cher|200/i, "Trois pistes, environ 205 € au total : Turkish Airlines au lieu de Qatar (−66 €/personne, escale plus longue), trois dîners en street food plutôt qu'au restaurant (−35 €), et le créneau SkyCab de 9 h réservé en ligne qui évite le billet coupe-file (−12 €). Le spa et la croisière restent intouchés — c'est le cœur du voyage."],
-  [/valise|bagage|emporter/i, "L'essentiel pour octobre : vêtements légers qui sèchent vite, une cape de pluie compacte (les averses durent 30 à 60 minutes), sandales tout-terrain, et une tenue couvrante par personne pour les mosquées. Anti-moustique dès le crépuscule, adaptateur type G, et gardez 1 kg de libre : le batik et le café blanc d'Ipoh remplissent les valises au retour."],
+  [/valise|bagage|emporter/i, "L'essentiel pour octobre : vêtements légers qui sèchent vite, une cape de pluie compacte (les averses durent 30 à 60 minutes), sandales tout-terrain, et une veste fine — la climatisation est redoutable en intérieur. Anti-moustique dès le crépuscule, adaptateur type G, et gardez 1 kg de libre : le batik et le café blanc d'Ipoh remplissent les valises au retour."],
 ];
 
 export default function Assistant() {
@@ -37,7 +37,8 @@ RÈGLES :
 - Réponds en français, en vouvoyant. Ton chaleureux et concret, 150 mots max.
 - Appuie-toi sur les données ci-dessus et cite les jours et lieux précis.
 - Tu ne peux PAS réserver : tu proposes, tu expliques, l'utilisateur décide.
-- IMPÉRATIF : ne suggère JAMAIS bars, boîtes de nuit, alcool ou établissements non conformes à ce profil. Si on te le demande, propose avec élégance des alternatives sans alcool.`;
+- Respecte scrupuleusement les restrictions alimentaires déclarées ci-dessus, sans jamais en inventer d'autres.
+- Reste neutre et accueillant : aucune suggestion fondée sur une appartenance religieuse, politique ou communautaire.`;
   };
 
   const send = async (text) => {
@@ -74,7 +75,7 @@ RÈGLES :
   const open = () => {
     setChatOpen(true);
     if (!chat.length) {
-      setChat([{ role: "assistant", hello: true, txt: "Bonjour ! Je connais chaque détail de votre voyage en Malaisie — itinéraire, budget, météo, adresses, horaires de prière. Posez-moi tout, ou touchez une suggestion." }]);
+      setChat([{ role: "assistant", hello: true, txt: "Bonjour ! Je connais chaque détail de votre voyage en Malaisie — itinéraire, budget, météo, adresses, horaires. Posez-moi tout, ou touchez une suggestion." }]);
     }
   };
 

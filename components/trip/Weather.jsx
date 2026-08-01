@@ -29,7 +29,7 @@ export default function Weather({ setTab, setDay }) {
       <div className="grid2" style={{ marginTop: 20 }}>
         <div className="card">
           <div className="kicker" style={{ marginBottom: 12 }}>LA RÈGLE ODYSSEA SOUS LES TROPIQUES</div>
-          <div className="wxrule"><Icon name="sun" /><span><b>Extérieur le matin</b> — Batu Caves, balades UNESCO et kayak sont calés avant 14 h, quand le ciel est le plus fiable.</span></div>
+          <div className="wxrule"><Icon name="sun" /><span><b>Extérieur le matin</b> — canopée de KL, balades UNESCO et kayak sont calés avant 14 h, quand le ciel est le plus fiable.</span></div>
           <hr className="rule" />
           <div className="wxrule"><Icon name="rain" /><span><b>À couvert de 15 h à 17 h</b> — musées, pauses à l&apos;hôtel et kopitiams occupent le créneau à risque.</span></div>
           <hr className="rule" />

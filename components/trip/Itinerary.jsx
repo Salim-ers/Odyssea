@@ -1,5 +1,5 @@
 "use client";
-import { DAYS, CITY, WX, PRAYER, TRV, TRVLBL, dayItems, photoOf } from "../../lib/data";
+import { DAYS, CITY, WX, SUNSET, TRV, TRVLBL, dayItems, photoOf } from "../../lib/data";
 import { useOdyssea } from "../../lib/store";
 import { Icon, Chip } from "../../lib/icons";
 import { Screen, ComparePlans } from "./Chrome";
@@ -11,9 +11,8 @@ function Meta({ s }) {
   if (s.cost) chips.push(<Chip key="cost" icon="wallet">{s.cost}</Chip>);
   if (s.crowd) chips.push(<Chip key="crowd" icon="users">{{ low: "Peu de monde", mod: "Affluence modérée", busy: "Beaucoup de monde" }[s.crowd]}</Chip>);
   if (s.resa) chips.push(<Chip key="resa" tone="gold" icon="info">{s.resa}</Chip>);
-  if (s.halal) chips.push(<Chip key="halal" tone="green" icon="check">Halal</Chip>);
   if (s.vegan) chips.push(<Chip key="vegan" tone="green" icon="leaf">Options véganes</Chip>);
-  if (s.tag === "mosquee") chips.push(<Chip key="m" tone="gold" icon="mosque">Prière</Chip>);
+  if (s.tag === "patrimoine") chips.push(<Chip key="m" tone="gold" icon="landmark">Patrimoine</Chip>);
   if (s.tag === "photo") chips.push(<Chip key="p" icon="cam">Spot photo</Chip>);
   if (s.tag === "jetlag") chips.push(<Chip key="j" icon="moon">Anti-décalage</Chip>);
   if (s.tag === "sunset") chips.push(<Chip key="s" tone="gold" icon="sun">Coucher de soleil</Chip>);
@@ -27,7 +26,7 @@ export default function Itinerary({ day, setDay, openChat }) {
   const d = DAYS[day];
   const items = dayItems(d, S.planApplied);
   const wx = WX[day];
-  const pr = PRAYER[d.c];
+  const sunset = SUNSET[d.c];
 
   return (
     <Screen kicker="Itinéraire" title="12 jours, heure par heure."
@@ -70,10 +69,8 @@ export default function Itinerary({ day, setDay, openChat }) {
               <button className="btn btn-gold small" onClick={() => setModal(<ComparePlans />)}>Voir le plan B</button>
             </>
           ))}
-          {pr && (
-            <span className="chip"><Icon name="mosque" />
-              Prières : {pr.Fajr} · {pr.Dhuhr} · {pr.Asr} · {pr.Maghrib} · {pr.Isha}
-            </span>
+          {sunset && (
+            <span className="chip"><Icon name="sun" />Coucher du soleil à {sunset}</span>
           )}
         </div>
       </div>

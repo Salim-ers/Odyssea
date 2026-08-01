@@ -3,10 +3,10 @@ import { useEffect, useState } from "react";
 import { Icon } from "../lib/icons";
 
 const STEPS = [
-  "Lecture de votre profil : couple, tables certifiées, nature",
+  "Lecture de votre profil : couple, gastronomie, nature",
   "Analyse de la Malaisie début octobre (inter-mousson)",
   "Curation des adresses, ville par ville",
-  "Composition des 12 journées, prières incluses",
+  "Composition des 12 journées, heure par heure",
   "Vérification des enchaînements et des marges",
   "Calcul du budget réel, ligne par ligne",
   "Détection des regrets probables… 3 trouvés",

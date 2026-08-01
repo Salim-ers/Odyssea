@@ -5,12 +5,12 @@ import ModalHost from "../components/ModalHost";
 
 export const metadata = {
   metadataBase: new URL(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"),
-  title: "Odyssea — Votre voyage, imaginé avec vous",
-  description: "Odyssea compose vos vols, votre séjour et chaque journée. Planifiez. Explorez. Vivez.",
+  title: "Odyssea — Le voyage sur mesure, sans les semaines de préparation",
+  description: "Dites-nous où, quand et avec qui : Odyssea compose les vols, les hébergements et chaque journée heure par heure. Planifiez. Explorez. Vivez.",
   icons: { icon: "/assets/odyssea-mark.png" },
   openGraph: {
-    title: "Odyssea — Votre voyage, imaginé avec vous",
-    description: "Vols, séjour, journées entières : tout s'organise, sans jamais rien vous imposer.",
+    title: "Odyssea — Le voyage sur mesure, sans les semaines de préparation",
+    description: "Vols, hébergements et journées composés heure par heure — vous gardez la main jusqu'au départ.",
     images: ["/assets/odyssea-logo.png"],
   },
 };
@@ -26,7 +26,7 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Sora:wght@200;300;400;500;600;700&family=DM+Sans:opsz,wght@9..40,300..700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Sora:wght@200;300;400;500;600;700&family=DM+Sans:opsz,wght@9..40,300..700&family=Cormorant+Garamond:wght@300;400;500&display=swap"
           rel="stylesheet"
         />
       </head>

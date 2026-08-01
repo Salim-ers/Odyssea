@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { LEGAL } from "../lib/data";
+import { LEGAL, ENTITY } from "../lib/data";
 import { useOdyssea } from "../lib/store";
 
 export default function Footer() {
@@ -43,7 +43,7 @@ export default function Footer() {
             <ul>
               <li><a href="#methode">Comment ça marche</a></li>
               <li><button onClick={() => toast("Bientôt disponible.")}>Questions fréquentes</button></li>
-              <li><button onClick={() => toast("contact@odyssea.demo")}>Nous écrire</button></li>
+              <li><a href={`mailto:${ENTITY.email}`}>Nous écrire</a></li>
             </ul>
           </div>
           <div>
@@ -59,12 +59,25 @@ export default function Footer() {
             </ul>
           </div>
         </div>
+        <div className="foot-legal">
+          <dl>
+            <div><dt>Éditeur</dt><dd>{ENTITY.name} · {ENTITY.legalForm}</dd></div>
+            <div><dt>SIREN</dt><dd className="mono">{ENTITY.siren}</dd></div>
+            <div><dt>SIRET (siège)</dt><dd className="mono">{ENTITY.siret}</dd></div>
+            <div><dt>TVA intracom.</dt><dd className="mono">{ENTITY.vat}</dd></div>
+            <div><dt>Code APE</dt><dd>{ENTITY.ape}</dd></div>
+            <div><dt>Immatriculation</dt><dd>{ENTITY.created}</dd></div>
+            <div><dt>Convention collective</dt><dd>{ENTITY.convention}</dd></div>
+            <div><dt>Contact</dt><dd><a href={`mailto:${ENTITY.email}`}>{ENTITY.email}</a></dd></div>
+          </dl>
+        </div>
+
         <div className="foot-bottom">
-          <span>© 2026 Odyssea — démonstration produit. Données fictives, aucune réservation réelle.</span>
+          <span>© 2026 {ENTITY.name}. Tous droits réservés.</span>
           <span className="right">
             <span>Conçu en France</span>
             <span>Aucune donnée revendue</span>
-            <span>Hébergement à renseigner</span>
+            <span><a href={`mailto:${ENTITY.email}`}>{ENTITY.email}</a></span>
           </span>
         </div>
       </div>

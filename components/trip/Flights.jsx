@@ -12,14 +12,14 @@ function ScoreModal({ f }) {
     <>
       <div className="kicker steel">{f.al} · Paris CDG → Kuala Lumpur</div>
       <h3 style={{ marginTop: 8 }}>Score {f.score} — le détail</h3>
-      <p className="note" style={{ margin: "8px 0 6px" }}>Pondéré selon votre profil (confort + repas certifié + fiabilité avant le prix pur).</p>
+      <p className="note" style={{ margin: "8px 0 6px" }}>Pondéré selon votre profil (confort + horaires + fiabilité avant le prix pur).</p>
       {f.dims.map(([label, v]) => (
         <div className="scorebar" key={label}>
           <div className="l"><span>{label}</span><b>{v}</b></div>
           <div className="tr"><i style={{ width: v + "%" }} /></div>
         </div>
       ))}
-      <p className="note" style={{ marginTop: 14 }}>{f.tag} — le repas halal certifié est un critère bloquant du profil.</p>
+      <p className="note" style={{ marginTop: 14 }}>{f.tag} — une escale unique et une arrivée en journée pèsent lourd dans ce score.</p>
     </>
   );
 }
@@ -54,7 +54,7 @@ export default function Flights() {
               <span className="tt">{f.arr}{f.plus ? <i>+{f.plus}</i> : null}</span>
             </div>
             <div className="fmeta">
-              <Chip icon="check" tone="green">Repas halal certifié</Chip>
+              <Chip icon="check" tone="green">Escale unique</Chip>
               <Chip icon="bag">2 × 23 kg inclus</Chip>
               <Chip icon="clock">{f.stops}</Chip>
             </div>
