@@ -100,12 +100,22 @@ export default function Stage() {
           <em>sans les semaines</em> de préparation.
         </h1>
         <p className="stage-sub">
-          Dites-nous où, quand et avec qui : nous composons les vols, les hébergements et
-          chaque journée heure par heure — vous gardez la main jusqu&apos;au départ.
+          Dites-nous où, quand et avec qui — nous composons tout le reste, heure par heure.
         </p>
         <Composer />
       </div>
-      <div className="scrollcue"><span>Découvrir</span><span className="rail" /></div>
+
+      {/* L'avion glisse le long de sa trajectoire et invite à descendre. */}
+      <button type="button" className="scrollcue" aria-label="Découvrir la suite"
+        onClick={() => document.getElementById("galerie")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+        <svg className="cue-path" viewBox="0 0 120 46" aria-hidden="true">
+          <path className="trail" d="M4 8 C 34 8 46 20 60 30 C 74 40 88 40 116 40" />
+          <path className="trail lead" d="M4 8 C 34 8 46 20 60 30 C 74 40 88 40 116 40" />
+          <g className="cue-plane">
+            <path d="M0 -5 L11 0 L0 5 L2.6 0 Z" />
+          </g>
+        </svg>
+      </button>
     </section>
   );
 }

@@ -12,8 +12,9 @@ import { Icon } from "../lib/icons";
    deux frères. Aucun élément interactif n'est imbriqué dans un autre — c'est
    ce qui faisait sortir les panneaux de leur champ et cassait la mise en page.
 
-   Les champs sont contrôlés par React : la saisie n'est jamais interrompue,
-   les panneaux ne font qu'apparaître et disparaître par une classe. */
+   Départ et destination se saisissent au clavier et filtrent la liste à la
+   frappe ; les champs sont contrôlés par React, la saisie n'est jamais
+   interrompue et les panneaux ne font qu'apparaître et disparaître. */
 
 const FLEX = ["Dates exactes", "± 2 jours", "± 1 semaine"];
 const norm = (s) =>
@@ -25,14 +26,19 @@ const nightsBetween = (dep, ret) => {
   return d > 0 ? Math.round(d) : 0;
 };
 
+const airportLabel = (a) => `${a[1].replace(" — Charles de Gaulle", " — CDG")}`;
+
 export default function Composer() {
   const { S, patchOb, toast } = useOdyssea();
   const o = S.ob;
   const [open, setOpen] = useState(null);
   const [flex, setFlex] = useState(FLEX[0]);
   const [cursor, setCursor] = useState(0);
+  /* Ce qui est réellement tapé dans « Départ ». Vide = on affiche la sélection. */
+  const [fromDraft, setFromDraft] = useState("");
   const root = useRef(null);
   const destInput = useRef(null);
+  const fromInput = useRef(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -50,6 +56,16 @@ export default function Composer() {
     };
   }, []);
 
+  /* Le bandeau cookies est en position fixe et passerait devant les panneaux :
+     on le prévient qu'une recherche est en cours. */
+  useEffect(() => {
+    document.body.dataset.composer = open ? "open" : "";
+    return () => { document.body.dataset.composer = ""; };
+  }, [open]);
+
+  /* Une fois le champ quitté, on repart de la sélection affichée. */
+  useEffect(() => { if (open !== "from") setFromDraft(""); }, [open]);
+
   /* Suggestions filtrées à la frappe, sans jamais vider la liste :
      si rien ne correspond, on propose la saisie telle quelle. */
   const q = norm(o.dest);
@@ -59,12 +75,11 @@ export default function Composer() {
   }, [q]);
   const freeText = o.dest.trim() && !matches.some(([n]) => norm(n) === q);
 
-  /* Le bandeau cookies est en position fixe et passerait devant les panneaux :
-     on le prévient qu'une recherche est en cours. */
-  useEffect(() => {
-    document.body.dataset.composer = open ? "open" : "";
-    return () => { document.body.dataset.composer = ""; };
-  }, [open]);
+  const fq = norm(fromDraft);
+  const airports = useMemo(() => {
+    if (!fq) return AIRPORTS;
+    return AIRPORTS.filter((a) => norm(a[0]).includes(fq) || norm(a[1]).includes(fq) || norm(a[2]).includes(fq));
+  }, [fq]);
 
   const openPanel = (k) => {
     setCursor(0);
@@ -77,6 +92,13 @@ export default function Composer() {
     destInput.current?.blur();
   };
 
+  const pickFrom = (a) => {
+    patchOb(() => ({ from: airportLabel(a) }));
+    setFromDraft("");
+    setOpen(null);
+    fromInput.current?.blur();
+  };
+
   /* Départ et retour restent cohérents quoi qu'il arrive. */
   const setDep = (v) => {
     patchOb((ob) => (nightsBetween(v, ob.ret) > 0 ? { dep: v } : { dep: v, ret: addDays(v, 7) }));
@@ -85,19 +107,18 @@ export default function Composer() {
     patchOb((ob) => (nightsBetween(ob.dep, v) > 0 ? { ret: v } : { ret: v, dep: addDays(v, -7) }));
   };
 
-  const onDestKey = (e) => {
-    const list = freeText ? [...matches, null] : matches;
+  /* Même navigation clavier pour les deux champs de saisie. */
+  const listNav = (e, list, panel, onPick) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
-      if (!open) return setOpen("dest");
+      if (open !== panel) return setOpen(panel);
       const d = e.key === "ArrowDown" ? 1 : -1;
-      setCursor((c) => (c + d + list.length) % list.length);
+      setCursor((c) => (list.length ? (c + d + list.length) % list.length : 0));
       return;
     }
-    if (e.key === "Enter" && open === "dest") {
+    if (e.key === "Enter" && open === panel) {
       e.preventDefault();
-      const hit = list[cursor];
-      pickDest(hit ? hit[0] : o.dest.trim());
+      onPick(list[cursor]);
     }
   };
 
@@ -110,27 +131,35 @@ export default function Composer() {
     <div className="composer-zone">
       <div className="composer" ref={root}>
         <div className="cfields">
-          {/* Départ */}
+          {/* Départ — saisie libre filtrée */}
           <div className={"cfield" + (open === "from" ? " open" : "")}>
-            <button type="button" className="ctrigger" aria-expanded={open === "from"}
-              aria-haspopup="listbox" onClick={() => openPanel("from")}>
-              <span className="lab">Départ</span>
-              <span className="val">{o.from}</span>
-            </button>
-            <div className={"cpanel" + (open === "from" ? " open" : "")} role="listbox">
-              <div className="cpanel-hd">Aéroports de départ</div>
-              {AIRPORTS.map((a) => {
-                const label = a[1].replace(" — Charles de Gaulle", " — CDG");
+            <span className="ctrigger as-input">
+              <label className="lab" htmlFor="c-from">Départ</label>
+              <input id="c-from" ref={fromInput} className="val" autoComplete="off"
+                value={open === "from" ? fromDraft : o.from}
+                placeholder={open === "from" ? o.from : "Ville ou code aéroport"}
+                role="combobox" aria-expanded={open === "from"} aria-controls="c-from-list"
+                onFocus={() => { setCursor(0); setFromDraft(""); setOpen("from"); }}
+                onKeyDown={(e) => listNav(e, airports, "from", (a) => a && pickFrom(a))}
+                onChange={(e) => { setCursor(0); setFromDraft(e.target.value); }} />
+            </span>
+            <div id="c-from-list" className={"cpanel" + (open === "from" ? " open" : "")} role="listbox">
+              <div className="cpanel-hd">{fq ? "Résultats" : "Aéroports de départ"}</div>
+              {airports.map((a, i) => {
+                const label = airportLabel(a);
                 return (
-                  <button type="button" key={a[0]} role="option" aria-selected={o.from === label}
-                    className={"row" + (o.from === label ? " sel" : "")}
-                    onClick={() => { patchOb(() => ({ from: label })); setOpen(null); }}>
+                  <button type="button" key={a[0]} role="option" aria-selected={cursor === i}
+                    className={"row" + (cursor === i ? " cur" : "") + (o.from === label ? " sel" : "")}
+                    onMouseEnter={() => setCursor(i)} onClick={() => pickFrom(a)}>
                     <span className="code">{a[0]}</span>
                     <span className="rtx"><b>{a[1]}</b><i>{a[2]}</i></span>
                     {o.from === label && <Icon name="check" />}
                   </button>
                 );
               })}
+              {!airports.length && (
+                <div className="cpanel-empty">Aucun aéroport ne correspond. Essayez « Lyon » ou « NCE ».</div>
+              )}
             </div>
           </div>
 
@@ -142,7 +171,8 @@ export default function Composer() {
                 placeholder="Une ville, un pays, une envie…"
                 role="combobox" aria-expanded={open === "dest"} aria-controls="c-dest-list"
                 onFocus={() => { setCursor(0); setOpen("dest"); }}
-                onKeyDown={onDestKey}
+                onKeyDown={(e) => listNav(e, freeText ? [...matches, null] : matches, "dest",
+                  (hit) => pickDest(hit ? hit[0] : o.dest.trim()))}
                 onChange={(e) => { setCursor(0); patchOb(() => ({ dest: e.target.value })); }} />
               {o.dest && (
                 <button type="button" className="cclear" aria-label="Effacer la destination"
@@ -217,7 +247,11 @@ export default function Composer() {
                 <span className="counter">
                   <button type="button" className="cstep" aria-label="Retirer un voyageur" disabled={o.trav <= 1}
                     onClick={() => patchOb((ob) => ({ trav: Math.max(1, ob.trav - 1) }))}>−</button>
-                  <span className="cnum">{o.trav}</span>
+                  <input className="cnum" type="number" min="1" max="12" value={o.trav} aria-label="Nombre de voyageurs"
+                    onChange={(e) => {
+                      const n = parseInt(e.target.value, 10);
+                      patchOb(() => ({ trav: Number.isNaN(n) ? 1 : Math.max(1, Math.min(12, n)) }));
+                    }} />
                   <button type="button" className="cstep" aria-label="Ajouter un voyageur" disabled={o.trav >= 12}
                     onClick={() => patchOb((ob) => ({ trav: Math.min(12, ob.trav + 1) }))}>+</button>
                 </span>
@@ -241,23 +275,20 @@ export default function Composer() {
           </div>
         </div>
 
+        {/* Ce qu'Odyssea doit prendre en charge — posé comme une question. */}
         <div className="copts">
-          {[["vol", "Vols"], ["hotel", "Hôtels"], ["act", "Activités"]].map(([k, label]) => (
-            <button type="button" key={k} className={"opt" + (o.include[k] ? " on" : "")} aria-pressed={o.include[k]}
-              onClick={() => patchOb((ob) => ({ include: { ...ob.include, [k]: !ob.include[k] } }))}>
-              {label}
-            </button>
-          ))}
+          <span className="coptq" id="copts-q">Que devons-nous organiser&nbsp;?</span>
+          <span className="optrow" role="group" aria-labelledby="copts-q">
+            {[["vol", "Les vols"], ["hotel", "L'hébergement"], ["act", "Les activités"]].map(([k, label]) => (
+              <button type="button" key={k} className={"opt" + (o.include[k] ? " on" : "")} aria-pressed={o.include[k]}
+                onClick={() => patchOb((ob) => ({ include: { ...ob.include, [k]: !ob.include[k] } }))}>
+                <span className="tick" aria-hidden="true"><Icon name="check" /></span>
+                {label}
+              </button>
+            ))}
+          </span>
           <span className="ctxline">{ctx}</span>
         </div>
-      </div>
-
-      <div className="reassure">
-        <span>Première proposition en quelques minutes</span>
-        <span aria-hidden="true">·</span>
-        <span>Modification libre</span>
-        <span aria-hidden="true">·</span>
-        <span>Sans engagement</span>
       </div>
     </div>
   );

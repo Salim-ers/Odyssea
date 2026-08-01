@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { DAYS, MAP, STOPS, dayItems } from "../lib/data";
+import { DAYS, MAP, STOPS, KINDS, kindOf, dayItems } from "../lib/data";
 import { useOdyssea } from "../lib/store";
 import { Icon } from "../lib/icons";
 import Reveal from "./Reveal";
@@ -83,6 +83,15 @@ export default function JourneyMap() {
               </span>
             </div>
 
+            {/* Une couleur par nature d'étape : la journée se lit d'un coup d'œil. */}
+            <ul className="kindkey">
+              {Object.entries(KINDS).map(([k, v]) => (
+                <li key={k} style={{ "--kc": v.c }}>
+                  <Icon name={v.icon} />{v.label}
+                </li>
+              ))}
+            </ul>
+
             <div className="dayscroll">
               {days.map((d) => (
                 <article className="dayblock" key={d.n}>
@@ -91,16 +100,21 @@ export default function JourneyMap() {
                     <h4>{d.t}</h4>
                     <span className="ddate">{d.d}</span>
                   </header>
-                  {dayItems(d, S.planApplied).map((it) => (
-                    <div className="dayline" key={it.id}>
-                      <span className="t">{it.t}</span>
-                      <div className="dtx">
-                        <b>{it.f}</b>
-                        {it.s && <span>{it.s}</span>}
-                        {it.why && <p className="why">{it.why}</p>}
+                  {dayItems(d, S.planApplied).map((it) => {
+                    const kind = kindOf(it.k);
+                    return (
+                      <div className="dayline" key={it.id} style={{ "--kc": kind.c }}>
+                        <span className="t">{it.t}</span>
+                        <span className="kmark" aria-hidden="true"><Icon name={kind.icon} /></span>
+                        <div className="dtx">
+                          <b>{it.f}</b>
+                          <span className="klabel">{kind.label}</span>
+                          {it.s && <span className="dsub">{it.s}</span>}
+                          {it.why && <p className="why">{it.why}</p>}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </article>
               ))}
             </div>

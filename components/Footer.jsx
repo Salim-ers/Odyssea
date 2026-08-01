@@ -12,6 +12,26 @@ export default function Footer() {
       <>
         <div className="kicker steel">Odyssea · informations légales</div>
         <h3 style={{ marginTop: 8 }}>{title}</h3>
+        {/* Les identifiants de l'entreprise vivent ici, pas dans le pied de page. */}
+        {k === "mentions" && (
+          <dl className="legal-dl">
+            {[
+              ["Éditeur", `${ENTITY.name} · ${ENTITY.legalForm}`],
+              ["SIREN", ENTITY.siren, true],
+              ["SIRET du siège", ENTITY.siret, true],
+              ["TVA intracommunautaire", ENTITY.vat, true],
+              ["Code APE", ENTITY.ape],
+              ["Immatriculation", ENTITY.created],
+              ["Convention collective", ENTITY.convention],
+            ].map(([dt, dd, mono]) => (
+              <div key={dt}><dt>{dt}</dt><dd className={mono ? "mono" : undefined}>{dd}</dd></div>
+            ))}
+            <div>
+              <dt>Contact</dt>
+              <dd><a href={`mailto:${ENTITY.email}`}>{ENTITY.email}</a></dd>
+            </div>
+          </dl>
+        )}
         <p style={{ marginTop: 14, fontSize: 13.5, lineHeight: 1.7, color: "var(--muted)" }}>{body}</p>
       </>
     );
@@ -59,25 +79,12 @@ export default function Footer() {
             </ul>
           </div>
         </div>
-        <div className="foot-legal">
-          <dl>
-            <div><dt>Éditeur</dt><dd>{ENTITY.name} · {ENTITY.legalForm}</dd></div>
-            <div><dt>SIREN</dt><dd className="mono">{ENTITY.siren}</dd></div>
-            <div><dt>SIRET (siège)</dt><dd className="mono">{ENTITY.siret}</dd></div>
-            <div><dt>TVA intracom.</dt><dd className="mono">{ENTITY.vat}</dd></div>
-            <div><dt>Code APE</dt><dd>{ENTITY.ape}</dd></div>
-            <div><dt>Immatriculation</dt><dd>{ENTITY.created}</dd></div>
-            <div><dt>Convention collective</dt><dd>{ENTITY.convention}</dd></div>
-            <div><dt>Contact</dt><dd><a href={`mailto:${ENTITY.email}`}>{ENTITY.email}</a></dd></div>
-          </dl>
-        </div>
-
         <div className="foot-bottom">
           <span>© 2026 {ENTITY.name}. Tous droits réservés.</span>
           <span className="right">
             <span>Conçu en France</span>
             <span>Aucune donnée revendue</span>
-            <span><a href={`mailto:${ENTITY.email}`}>{ENTITY.email}</a></span>
+            <button onClick={() => legal("mentions")}>Mentions légales</button>
           </span>
         </div>
       </div>
