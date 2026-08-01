@@ -55,7 +55,7 @@ function routeThrough(stops) {
 
 const RATIO = 620 / 460;
 
-export default function TripMap({ stops, worldPath }) {
+export default function TripMap({ stops, worldPath, active }) {
   const usable = (stops || []).filter(
     (s) => Number.isFinite(s.lat) && Number.isFinite(s.lon)
   );
@@ -96,7 +96,7 @@ export default function TripMap({ stops, worldPath }) {
         )}
 
         {usable.map((s) => (
-          <g key={s.name}>
+          <g key={s.name} className={active === s.name ? "tm-on" : undefined}>
             <circle cx={px(s.lon)} cy={py(s.lat)} r={13 * k} className="tm-halo" />
             <circle cx={px(s.lon)} cy={py(s.lat)} r={7 * k} className="tm-ring" strokeWidth={2.4 * k} />
             <circle cx={px(s.lon)} cy={py(s.lat)} r={2.8 * k} className="tm-dot" />
@@ -108,7 +108,7 @@ export default function TripMap({ stops, worldPath }) {
       {usable.map((s, i) => (
         <span
           key={s.name}
-          className={"tm-tag" + (i % 2 ? " low" : "")}
+          className={"tm-tag" + (i % 2 ? " low" : "") + (active === s.name ? " on" : "")}
           style={{
             left: `${((px(s.lon) - box.x) / box.w) * 100}%`,
             top: `${((py(s.lat) - box.y) / box.h) * 100}%`,

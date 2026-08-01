@@ -1504,3 +1504,8 @@ body[data-composer="open"] .cookiebar{opacity:0;visibility:hidden;pointer-events
 /* Deux étapes voisines auraient des étiquettes superposées : on les alterne
    au-dessus et au-dessous du repère. */
 .tm-tag.low{transform:translate(-50%,100%)}
+/* L'escale choisie ressort sur la carte d'un voyage composé. */
+.tm-on .tm-ring{stroke:#fff;stroke-width:3}
+.tm-on .tm-halo{fill:rgba(246,172,99,.5)}
+.tm-tag.on{background:var(--amber);color:#fff}
+.tm-tag.on b{color:rgba(255,255,255,.75)}
