@@ -49,7 +49,7 @@ export default function TripApp({ trip }) {
           )}
           <Link className="btn btn-gold small" href="/parcours">
             <Icon name="spark" />
-            Nouveau<span className="long">&nbsp;voyage</span>
+            Nouveau<span className="long">voyage</span>
           </Link>
         </div>
       </div>

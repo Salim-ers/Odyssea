@@ -10,7 +10,7 @@
    écrite en dur, et ce qui manque se dit plutôt que de se combler. */
 
 import { useEffect, useState } from "react";
-import TileMap from "../TileMap";
+import LiveMap from "../LiveMap";
 import { Icon, Chip } from "../../lib/icons";
 import { kindOf, KINDS } from "../../lib/kinds";
 import { eur, frDate, frDateLong, nights } from "../../lib/store";
@@ -91,8 +91,8 @@ export function Overview({ trip, setTab }) {
       </header>
 
       <div className="vmap-row">
-        <div className="map-wrap">
-          <TileMap stops={plan.stops} active={stop} />
+        <div className="map-wrap plain">
+          <LiveMap stops={plan.stops} active={stop} onSelect={setStop} height={480} />
           <div className="map-legend">
             <span>
               {plan.stops.length} escale{plan.stops.length > 1 ? "s" : ""}
@@ -101,7 +101,6 @@ export function Overview({ trip, setTab }) {
               {days.length} journée{days.length > 1 ? "s" : ""} écrite{days.length > 1 ? "s" : ""}
             </span>
           </div>
-          <p className="map-credit">Fond de carte © OpenStreetMap.</p>
         </div>
 
         <div className="vside">

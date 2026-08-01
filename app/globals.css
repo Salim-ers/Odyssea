@@ -774,6 +774,8 @@ button.chip.on{background:#061E2A;color:var(--cream)}
   .app-bar .wordmark .wm-letters,.app-bar .wordmark .wm-lam{font-size:15px}
   .app-bar .wordmark .wm-letters{letter-spacing:.2em}
   .app-bar .right .btn{padding:8px 12px;font-size:11.5px}
+  /* L espace vient de l écart flex : un espace insécable en plus en
+     faisait deux. */
   .app-bar .right .btn .long{display:none}
 }
 
@@ -1670,3 +1672,63 @@ body[data-composer="open"] .cookiebar{opacity:0;visibility:hidden;pointer-events
 .gen-doing svg{width:14px;height:14px;flex:none;opacity:.75}
 .gen-doing.on{color:var(--amber-deep)}
 .gen-doing span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ============================ CARTE MANIPULABLE ============================
+   Une vraie carte : rues, routes, frontières, quartiers, gares, aéroports,
+   points d'intérêt. On la déplace, on zoome, on clique une étape. Les traits
+   sont soit des routes réelles rendues par le moteur de routage, soit
+   l'orthodromie d'un vol — jamais un ornement. */
+
+/* Dans la colonne du voyage, le cadre décoratif est de trop : la carte a
+   déjà le sien. */
+.map-wrap.plain{padding:0;background:none;border:none;box-shadow:none}
+.map-wrap.plain .map-legend{margin-top:12px}
+.livemap{margin:0;border-radius:22px;overflow:hidden;border:1px solid rgba(9,24,45,.09);
+  background:#E7EFF1;box-shadow:0 30px 70px -58px rgba(3,20,26,.7)}
+.lm-canvas{width:100%;background:#E7EFF1}
+/* Le fond entre dans la palette du site sans qu'on ait à le retoucher. */
+.lm-canvas .leaflet-tile-pane{filter:saturate(.62) sepia(.10) brightness(1.03) contrast(.97)}
+.lm-canvas .leaflet-container{font-family:var(--dm);background:#E7EFF1}
+.lm-canvas .leaflet-control-attribution{font-size:9.5px;background:rgba(252,251,248,.85);
+  color:var(--muted-2);padding:2px 7px}
+.lm-canvas .leaflet-control-attribution a{color:var(--link)}
+.lm-canvas .leaflet-bar a{color:var(--navy);border-color:rgba(9,24,45,.1)}
+
+/* L'étiquette d'une étape, posée sur son point. */
+.lm-pin{display:inline-flex;align-items:baseline;gap:8px;white-space:nowrap;
+  transform:translate(-50%,-140%);padding:6px 13px;border-radius:999px;
+  background:rgba(252,251,248,.96);border:1px solid rgba(9,24,45,.1);
+  box-shadow:0 12px 26px -16px rgba(3,20,26,.75);
+  font-size:12.5px;font-weight:500;color:var(--navy);
+  transition:background .25s,color .25s,transform .25s var(--ease)}
+.lm-pin b{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--amber-deep);font-weight:600}
+.lm-pin i{font-style:normal}
+.lm-pin::after{content:"";position:absolute;left:50%;top:100%;width:9px;height:9px;
+  transform:translate(-50%,-55%) rotate(45deg);
+  background:inherit;border-right:1px solid rgba(9,24,45,.1);border-bottom:1px solid rgba(9,24,45,.1)}
+.lm-pin:hover{transform:translate(-50%,-150%)}
+.lm-pin.on{background:var(--navy);border-color:var(--navy);color:var(--cream)}
+.lm-pin.on b{color:var(--amber-hi)}
+
+.lm-canvas .leaflet-popup-content-wrapper{border-radius:16px;box-shadow:0 22px 50px -30px rgba(3,20,26,.8)}
+.lm-canvas .leaflet-popup-content{margin:14px 16px;font-size:13px;color:var(--muted);line-height:1.55}
+.lm-canvas .leaflet-popup-content b{display:block;font-family:var(--sora);font-weight:500;
+  font-size:16px;color:var(--ink)}
+.lm-canvas .leaflet-popup-content span{display:block;margin-top:2px;font-family:var(--mono);
+  font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2)}
+.lm-canvas .leaflet-popup-content p{margin-top:8px}
+
+/* Les tronçons, sous la carte : distance et durée, tronçon par tronçon. */
+.lm-legs{display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px;background:var(--white);
+  border-top:1px solid rgba(9,24,45,.07)}
+.lm-leg{display:inline-flex;align-items:baseline;gap:8px;padding:7px 13px;border-radius:999px;
+  background:var(--panel-2);font-size:12.5px;color:var(--muted)}
+.lm-leg b{font-weight:500;color:var(--ink)}
+.lm-leg em{font-style:normal;color:var(--muted-2)}
+.lm-leg i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--amber-deep)}
+.lm-leg.air i{color:var(--teal)}
+
+@media(max-width:620px){
+  .lm-pin{font-size:11.5px;padding:5px 11px}
+  .lm-legs{padding:10px}
+}
