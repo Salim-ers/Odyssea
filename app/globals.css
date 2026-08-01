@@ -140,8 +140,11 @@ button.chip.on{background:#061E2A;color:var(--cream)}
 
 .onb-wrap{max-width:940px;margin:0 auto;padding:clamp(34px,6vh,58px) clamp(20px,3vw,44px) 0}
 .onb-head{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
-.onb-head .st{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
-  color:var(--amber-deep);white-space:nowrap}
+/* Le compteur d'étape est un repère, pas une étiquette technique : serif de
+   l'emblème, corps généreux, capitales espacées. */
+.onb-head .st{font-family:var(--serif);font-weight:500;font-size:19px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--amber-deep);white-space:nowrap}
+.onb-head .st b{font-weight:500;color:var(--navy)}
 .onb-head .hint{font-size:13px;color:var(--muted-2)}
 
 /* Progression : un avion traverse le rail d'une étape à l'autre.
@@ -246,6 +249,9 @@ button.chip.on{background:#061E2A;color:var(--cream)}
 .ob-q{margin-top:clamp(28px,5vh,46px);font-family:var(--sora);font-weight:200;
   font-size:clamp(30px,4.2vw,52px);line-height:1.05;letter-spacing:-.035em;color:var(--navy)}
 .ob-sub{margin-top:14px;font-size:15.5px;line-height:1.6;color:var(--muted);max-width:620px}
+/* Centrer le texte ne suffit pas quand la boîte est bornée : elle doit être
+   centrée elle aussi. */
+.ob-sub.mid{margin-inline:auto;text-align:center}
 
 /* Cartes de choix */
 .pick-grid{margin-top:32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:15px}
@@ -1387,9 +1393,51 @@ body[data-composer="open"] .cookiebar{opacity:0;visibility:hidden;pointer-events
 .ob-input:focus{box-shadow:0 0 0 3px var(--amber-soft),0 22px 50px -34px rgba(224,129,60,.55)}
 
 /* Le compteur d'étape et l'indice se répondent en haut de page. */
-.onb-head .st{position:relative;padding-left:16px}
-.onb-head .st::before{content:"";position:absolute;left:0;top:50%;width:8px;height:8px;border-radius:50%;
-  transform:translateY(-50%);background:var(--amber);box-shadow:0 0 0 4px rgba(224,129,60,.16)}
+
 
 /* Le pied du parcours : les deux boutons ne flottent plus dans le vide. */
 .ob-nav{padding-top:30px;border-top:1px solid rgba(9,24,45,.07)}
+
+/* ============================================================
+   CARTE DU PARCOURS
+   Le tracé se révèle par stroke-dashoffset sur un chemin de longueur
+   normalisée à 1 : la portion dessinée correspond exactement à la
+   progression, sans mesurer le chemin en JavaScript.
+   ============================================================ */
+.pmap{margin:clamp(36px,7vh,72px) 0 0;position:relative}
+.pmap svg{display:block;width:100%;height:auto;overflow:visible}
+
+.pm-land path{fill:var(--teal-2);opacity:.055}
+.pm-grid line{stroke:rgba(9,24,45,.05);stroke-width:1}
+
+.pm-ghost{fill:none;stroke:rgba(9,24,45,.12);stroke-width:1.5;stroke-dasharray:2 7;stroke-linecap:round}
+.pm-route{fill:none;stroke:url(#pm-route);stroke-width:2.6;stroke-linecap:round;
+  stroke-dasharray:1;stroke-dashoffset:calc(1 - var(--p));
+  filter:drop-shadow(0 3px 10px rgba(224,129,60,.35));
+  transition:stroke-dashoffset 1.1s cubic-bezier(.34,1.02,.4,1)}
+
+/* Une escale n'existe qu'une fois atteinte : elle éclot, elle n'apparaît pas. */
+.pm-stop .pm-ring{fill:var(--paper-2);stroke:rgba(9,24,45,.14);stroke-width:1.5;
+  transform-box:fill-box;transform-origin:center;transform:scale(.5);opacity:.35;
+  transition:all .6s cubic-bezier(.34,1.4,.4,1)}
+.pm-stop .pm-dot{fill:rgba(9,24,45,.16);transform-box:fill-box;transform-origin:center;
+  transform:scale(.5);transition:all .6s cubic-bezier(.34,1.4,.4,1)}
+.pm-stop .pm-label{fill:var(--muted-2);font-family:var(--dm);font-size:12px;
+  opacity:0;transform:translateY(6px);transition:all .55s var(--ease)}
+
+.pm-stop.on .pm-ring{fill:#fff;stroke:var(--amber);transform:scale(1);opacity:1}
+.pm-stop.on .pm-dot{fill:var(--amber);transform:scale(1)}
+.pm-stop.on .pm-label{opacity:1;transform:none;fill:var(--muted)}
+
+.pm-stop.cur .pm-ring{stroke-width:2.5}
+.pm-stop.cur .pm-dot{fill:var(--amber-deep)}
+.pm-stop.cur .pm-label{fill:var(--navy);font-weight:600}
+.pm-halo{animation:breathe 3s ease-in-out infinite}
+
+.pmap-cap{margin-top:14px;text-align:center;font-size:12px;color:var(--muted-2)}
+
+/* Sur petit écran la carte se lit mal : on ne garde que la légende. */
+@media(max-width:760px){
+  .pmap svg{display:none}
+  .pmap{margin-top:32px}
+}

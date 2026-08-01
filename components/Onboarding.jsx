@@ -6,6 +6,7 @@ import { useOdyssea, frDate } from "../lib/store";
 import { Icon } from "../lib/icons";
 import Wordmark from "./Wordmark";
 import Generating from "./Generating";
+import ParcoursMap from "./ParcoursMap";
 
 export default function Onboarding() {
   const { ob: o, patchOb, toast } = useOdyssea();
@@ -142,7 +143,7 @@ export default function Onboarding() {
           ))}
         </div>
       ) : (
-        <p className="ob-sub" style={{ textAlign: "center", marginTop: 26 }}>
+        <p className="ob-sub mid" style={{ marginTop: 26 }}>
           {o.group === "Solo" ? "Vous voyagez seul — rien d'autre à préciser." : "À deux — rien d'autre à préciser."}
         </p>
       )}
@@ -250,7 +251,7 @@ export default function Onboarding() {
             qu'on lit sans le regarder. */}
         <span className="ob-ghost" aria-hidden="true">{String(o.step + 1).padStart(2, "0")}</span>
         <div className="onb-head">
-          <span className="st">Étape {o.step + 1} sur {OB_STEPS}</span>
+          <span className="st">Étape <b>{o.step + 1}</b> sur {OB_STEPS}</span>
           <span className="hint">{OB_HINTS[o.step]}</span>
         </div>
         {/* La position est portée par une seule variable, sans unité : le rail,
@@ -282,6 +283,8 @@ export default function Onboarding() {
             ? <button className="btn btn-gold" onClick={() => go(1)}>Continuer →</button>
             : <button className="btn btn-gold" onClick={compose} disabled={sending}><Icon name="spark" />{sending ? "Lancement…" : "Composer mon voyage"}</button>}
         </div>
+        <ParcoursMap ob={o} step={o.step} total={OB_STEPS} />
+
         <p className="ob-note">
           Les questions secondaires (mobilité, enfants, escales…) arrivent plus tard, au bon moment — jamais toutes d&apos;un coup.
         </p>
