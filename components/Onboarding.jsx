@@ -1,18 +1,37 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { OB_STEPS, OB_HINTS, STYLE_CARDS } from "../lib/onboarding";
 import { useOdyssea, frDate } from "../lib/store";
-import { Icon, PLANE } from "../lib/icons";
+import { Icon } from "../lib/icons";
 import Wordmark from "./Wordmark";
 import Generating from "./Generating";
 
 export default function Onboarding() {
   const { ob: o, patchOb, toast } = useOdyssea();
-  const [gen, setGen] = useState(false);
+  const [gen, setGen] = useState(null);
+  const [sending, setSending] = useState(false);
   const router = useRouter();
   const pct = Math.round((o.step / (OB_STEPS - 1)) * 100);
-  const go = (d) => patchOb((ob) => ({ step: Math.max(0, Math.min(OB_STEPS - 1, ob.step + d)) }));
+
+  /* La direction du dernier saut fait entrer la question du bon côté : on
+     avance, elle vient de la droite ; on revient, elle vient de la gauche.
+     `flying` dure le temps du vol et sert à incliner l'avion. */
+  const [dir, setDir] = useState(1);
+  const [flying, setFlying] = useState(false);
+  const flightTimer = useRef(null);
+
+  const jump = (next) => {
+    const target = Math.max(0, Math.min(OB_STEPS - 1, next));
+    if (target === o.step) return;
+    setDir(target > o.step ? 1 : -1);
+    setFlying(true);
+    clearTimeout(flightTimer.current);
+    flightTimer.current = setTimeout(() => setFlying(false), 900);
+    patchOb(() => ({ step: target }));
+  };
+  const go = (d) => jump(o.step + d);
+  useEffect(() => () => clearTimeout(flightTimer.current), []);
 
   const pickStyle = (label) => {
     if (o.stylePri === label) return patchOb((ob) => ({ stylePri: ob.styleSec, styleSec: null }));
@@ -231,19 +250,25 @@ export default function Onboarding() {
           <span className="st">Étape {o.step + 1} sur {OB_STEPS}</span>
           <span className="hint">{OB_HINTS[o.step]}</span>
         </div>
-        <div className="prog">
+        <div className={"prog" + (flying ? " flying" : "")}>
           <span className="track" />
           <span className="fill" style={{ width: pct + "%" }} />
-          <span className="plane" style={{ left: pct + "%" }}>{PLANE}</span>
+          <span className="wake" style={{ width: pct + "%" }} aria-hidden="true" />
+          <span className="plane" style={{ left: pct + "%" }} aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path className="hull" d="M1 21 L23 12 L1 3 L5.5 12 Z" />
+              <path className="wing" d="M5.5 12 L23 12 L1 21 Z" />
+            </svg>
+          </span>
           <div className="nodes">
             {Array.from({ length: OB_STEPS }, (_, i) => (
               <button key={i} aria-label={"Étape " + (i + 1)}
                 className={"node" + (i < o.step ? " done" : i === o.step ? " cur" : "")}
-                onClick={() => patchOb(() => ({ step: i }))} />
+                onClick={() => jump(i)} />
             ))}
           </div>
         </div>
-        <div className="ob-step-body" key={o.step}>{steps[o.step]}</div>
+        <div className={"ob-step-body " + (dir > 0 ? "fwd" : "back")} key={o.step}>{steps[o.step]}</div>
         <div className="ob-nav">
           {o.step > 0
             ? <button className="btn btn-line" onClick={() => go(-1)}>← Retour</button>

@@ -144,22 +144,94 @@ button.chip.on{background:#061E2A;color:var(--cream)}
   color:var(--amber-deep);white-space:nowrap}
 .onb-head .hint{font-size:13px;color:var(--muted-2)}
 
-/* Progression : un trait fin, un avion, rien de plus. */
-.prog{position:relative;margin-top:16px;height:28px}
-.prog .track,.prog .fill{position:absolute;top:13px;left:0;height:2px;border-radius:2px}
-.prog .track{right:0;background:rgba(9,24,45,.1)}
-.prog .fill{background:linear-gradient(90deg,var(--teal-2),var(--amber));transition:width .55s var(--ease)}
-.prog .nodes{position:relative;display:flex;align-items:center;justify-content:space-between}
-.prog .node{width:9px;height:9px;border-radius:50%;border:1px solid rgba(9,24,45,.16);
-  background:var(--paper-2);padding:0;transition:all .35s var(--ease)}
-.prog .node.done{background:var(--teal-2);border-color:var(--teal-2)}
-.prog .node.cur{width:15px;height:15px;background:var(--amber);border-color:#fff;
-  box-shadow:0 0 0 4px rgba(224,129,60,.18)}
-.prog .plane{position:absolute;top:13px;color:var(--amber-deep);transition:left .55s var(--ease);
-  transform:translate(-50%,-50%)}
-.prog .plane svg{width:15px;height:15px;display:block}
+/* Progression : un avion traverse le rail d'une étape à l'autre.
 
-.ob-step-body{animation:riseIn .45s var(--ease) both}
+   Le vol dure plus longtemps que le remplissage de la traînée, et part d'un
+   léger recul avant de filer — c'est ce décalage qui donne l'impression d'un
+   décollage plutôt que d'un glissement. */
+@keyframes planeLean{
+  0%{transform:translate(-62%,-50%) rotate(0deg) scale(1)}
+  14%{transform:translate(-62%,-50%) rotate(-9deg) scale(1.14)}
+  48%{transform:translate(-62%,-50%) rotate(4deg) scale(1.2)}
+  100%{transform:translate(-62%,-50%) rotate(0deg) scale(1)}
+}
+@keyframes nodeLand{
+  0%{transform:scale(1)}
+  40%{transform:scale(1.55)}
+  100%{transform:scale(1)}
+}
+@keyframes wakeSweep{
+  from{opacity:.9}
+  to{opacity:0}
+}
+
+.prog{position:relative;margin-top:20px;height:44px}
+.prog .track,.prog .fill,.prog .wake{position:absolute;top:21px;left:0;height:2px;border-radius:2px}
+.prog .track{right:0;background:rgba(9,24,45,.1)}
+.prog .fill{background:linear-gradient(90deg,var(--teal-2),var(--amber));
+  transition:width .8s cubic-bezier(.34,1.06,.4,1)}
+/* Le sillage : un halo qui s'étire derrière l'avion et s'efface. */
+.prog .wake{height:8px;top:18px;border-radius:8px;opacity:0;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(224,129,60,.34));
+  transition:width .8s cubic-bezier(.34,1.06,.4,1)}
+.prog.flying .wake{animation:wakeSweep .9s var(--ease) both}
+
+.prog .nodes{position:relative;top:8px;display:flex;align-items:center;justify-content:space-between}
+.prog .node{width:9px;height:9px;border-radius:50%;border:1px solid rgba(9,24,45,.16);
+  background:var(--paper-2);padding:0;cursor:pointer;
+  transition:background .35s var(--ease),border-color .35s var(--ease),width .35s var(--ease),height .35s var(--ease)}
+.prog .node:hover{border-color:var(--amber)}
+.prog .node.done{background:var(--teal-2);border-color:var(--teal-2);animation:nodeLand .5s var(--ease)}
+/* L'étape courante reste discrète : c'est l'avion qui marque la position. */
+.prog .node.cur{background:var(--amber);border-color:var(--amber);animation:nodeLand .55s var(--ease)}
+
+/* L'avion lui-même : deux facettes pour lui donner du volume, et une ombre
+   portée ambre qui le décolle du rail. */
+.prog .plane{position:absolute;top:21px;transform:translate(-62%,-50%);
+  transition:left .8s cubic-bezier(.34,1.06,.4,1);will-change:left,transform;
+  filter:drop-shadow(0 6px 14px rgba(224,129,60,.5))}
+.prog .plane svg{width:38px;height:38px;display:block;overflow:visible}
+.prog .plane .hull{fill:var(--amber)}
+.prog .plane .wing{fill:var(--amber-deep);opacity:.75}
+.prog.flying .plane{animation:planeLean .9s cubic-bezier(.34,1.06,.4,1)}
+
+/* Entrée de la question, orientée par le sens du saut. */
+@keyframes stepInFwd{from{opacity:0;transform:translate3d(34px,10px,0)}to{opacity:1;transform:none}}
+@keyframes stepInBack{from{opacity:0;transform:translate3d(-34px,10px,0)}to{opacity:1;transform:none}}
+.ob-step-body{animation:stepInFwd .5s cubic-bezier(.2,.8,.2,1) both}
+.ob-step-body.back{animation-name:stepInBack}
+
+/* Cascade : le titre, puis le sous-titre, puis les réponses. Le décalage est
+   court — assez pour donner un ordre de lecture, pas assez pour faire attendre. */
+.ob-step-body>*>*{animation:riseIn .5s cubic-bezier(.2,.8,.2,1) both}
+.ob-step-body>*>*:nth-child(1){animation-delay:.04s}
+.ob-step-body>*>*:nth-child(2){animation-delay:.10s}
+.ob-step-body>*>*:nth-child(3){animation-delay:.16s}
+.ob-step-body>*>*:nth-child(4){animation-delay:.22s}
+.ob-step-body>*>*:nth-child(n+5){animation-delay:.28s}
+
+/* Les cartes de choix entrent en éventail. */
+.pick-grid .pick{animation:riseIn .5s cubic-bezier(.2,.8,.2,1) both}
+.pick-grid .pick:nth-child(1){animation-delay:.16s}
+.pick-grid .pick:nth-child(2){animation-delay:.21s}
+.pick-grid .pick:nth-child(3){animation-delay:.26s}
+.pick-grid .pick:nth-child(4){animation-delay:.31s}
+.pick-grid .pick:nth-child(5){animation-delay:.36s}
+.pick-grid .pick:nth-child(6){animation-delay:.41s}
+.chiprow .d-chip{animation:riseIn .45s cubic-bezier(.2,.8,.2,1) both}
+.chiprow .d-chip:nth-child(1){animation-delay:.18s}
+.chiprow .d-chip:nth-child(2){animation-delay:.22s}
+.chiprow .d-chip:nth-child(3){animation-delay:.26s}
+.chiprow .d-chip:nth-child(4){animation-delay:.30s}
+.chiprow .d-chip:nth-child(n+5){animation-delay:.34s}
+.yn-row{animation:riseIn .5s cubic-bezier(.2,.8,.2,1) both}
+.yn-row:nth-child(1){animation-delay:.16s}
+.yn-row:nth-child(2){animation-delay:.23s}
+.yn-row:nth-child(3){animation-delay:.30s}
+.ob-count{animation:riseIn .5s cubic-bezier(.2,.8,.2,1) both}
+.ob-count:nth-child(1){animation-delay:.20s}
+.ob-count:nth-child(2){animation-delay:.27s}
+
 .ob-q{margin-top:clamp(28px,5vh,46px);font-family:var(--sora);font-weight:200;
   font-size:clamp(30px,4.2vw,52px);line-height:1.05;letter-spacing:-.035em;color:var(--navy)}
 .ob-sub{margin-top:14px;font-size:15.5px;line-height:1.6;color:var(--muted);max-width:620px}
@@ -1233,3 +1305,17 @@ body[data-composer="open"] .cookiebar{opacity:0;visibility:hidden;pointer-events
 .app-bar .btn-line:hover{border-color:var(--amber-hi);color:var(--amber-hi);background:transparent}
 .app-bar .btn-quiet{color:rgba(252,251,248,.6)}
 .app-bar .btn-quiet:hover{color:var(--cream)}
+
+/* Micro-interactions du questionnaire : rien de spectaculaire, juste de la
+   matière sous le doigt. */
+.d-chip,.yn button{transition:transform .3s var(--ease),background .3s,border-color .3s,color .3s,box-shadow .3s}
+.d-chip:hover{transform:translateY(-2px)}
+.d-chip:active,.yn button:active{transform:translateY(0) scale(.97);transition-duration:.09s}
+.d-chip.on{box-shadow:0 12px 26px -14px rgba(224,129,60,.75)}
+.yn button:hover{transform:translateY(-1px);border-color:var(--amber)}
+.yn button.on{box-shadow:0 12px 26px -16px rgba(3,20,26,.8)}
+.yn-row{transition:background .3s var(--ease);border-radius:14px;padding-left:14px;padding-right:14px;margin-inline:-14px}
+.yn-row:hover{background:rgba(255,255,255,.6)}
+.pick:active{transform:translateY(-1px) scale(.99);transition-duration:.09s}
+.ob-count-ctl button:active{transform:scale(.9);transition-duration:.09s}
+.ob-nav .btn{transition:transform .35s var(--ease),box-shadow .35s var(--ease),background .3s,border-color .3s,color .3s}
