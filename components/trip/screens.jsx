@@ -14,6 +14,7 @@ import TileMap from "../TileMap";
 import { Icon, Chip } from "../../lib/icons";
 import { kindOf, KINDS } from "../../lib/kinds";
 import { eur, frDate, frDateLong, nights } from "../../lib/store";
+import { showCost, usd, summary as usageSummary, detail as usageDetail, PHASE_LABELS } from "../../lib/usage";
 
 export function Screen({ kicker, title, intro, children }) {
   return (
@@ -192,6 +193,27 @@ export function Overview({ trip, setTab }) {
           Soit environ {eur(perPerson)} par personne. Les montants marqués « estimé » n&apos;ont pas été
           relevés sur une page de réservation : vérifiez-les avant de vous engager.
         </p>
+      ) : null}
+
+      {/* Ce que la composition de ce voyage a coûté en appels modèle. Relevé,
+          pas estimé : c'est la somme des `usage` renvoyés par l'API. */}
+      {showCost() && trip.usage?.total ? (
+        <details className="vspent">
+          <summary>
+            <span>Composition de ce voyage</span>
+            <b className="mono">{usd(trip.usage.total.costUsd)}</b>
+          </summary>
+          <p className="mono">{usageSummary(trip.usage.total)}</p>
+          <ul>
+            {Object.entries(trip.usage.phases || {}).map(([k, u]) => (
+              <li key={k}>
+                <span>{PHASE_LABELS[k] || k}</span>
+                <b className="mono">{usd(u.costUsd)}</b>
+                <i className="mono">{usageDetail(u)}</i>
+              </li>
+            ))}
+          </ul>
+        </details>
       ) : null}
     </section>
   );

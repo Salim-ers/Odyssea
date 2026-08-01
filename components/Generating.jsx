@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Wordmark from "./Wordmark";
 import ParcoursMap from "./ParcoursMap";
 import { Icon } from "../lib/icons";
+import { showCost, summary } from "../lib/usage";
 
 /* L'écran de composition.
 
@@ -38,6 +39,7 @@ export default function Generating({ tripId, totalDays, ob, onDone, onError }) {
   const [note, setNote] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [failure, setFailure] = useState(null);
+  const [spent, setSpent] = useState(null);
   /* Un incrément suffit à relancer la boucle : ce qui est déjà écrit reste en
      base, la reprise repart de la phase suivante. */
   const [attempt, setAttempt] = useState(0);
@@ -93,6 +95,7 @@ export default function Generating({ tripId, totalDays, ob, onDone, onError }) {
 
         setPhase(data.phase);
         if (data.progress) setWritten(data.progress.written);
+        if (data.usage) setSpent(data.usage);
         if (data.degraded?.length) {
           setNote("Certaines options avancées du modèle ne sont pas disponibles — la composition continue.");
         }
@@ -161,6 +164,12 @@ export default function Generating({ tripId, totalDays, ob, onDone, onError }) {
           </span>
           <span className="pct mono">{pct} %</span>
         </div>
+
+        {/* Ce que la composition a réellement consommé, mis à jour à chaque
+            phase. Le chiffre vient de l API, pas d une estimation. */}
+        {showCost() && spent && (
+          <p className="gen-spent mono">{summary(spent)}</p>
+        )}
 
         {failure && (
           <div className="gen-fail" role="alert">

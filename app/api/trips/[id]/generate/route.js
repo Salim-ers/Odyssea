@@ -12,6 +12,7 @@ import {
   savePractical,
   failTrip,
   dayCount,
+  foldUsage,
 } from "../../../../../lib/trips";
 import {
   generatePlan,
@@ -51,13 +52,15 @@ export async function POST(request, { params }) {
   try {
     /* Phase 1 — le plan. */
     if (!trip.plan) {
-      const { plan, degraded } = await generatePlan(trip.brief);
-      await savePlan(params.id, plan);
+      const { plan, degraded, usage } = await generatePlan(trip.brief);
+      const spent = foldUsage(trip.usage, "plan", usage);
+      await savePlan(params.id, plan, spent);
       return Response.json({
         phase: "plan",
         done: false,
         progress: { written: 0, total },
         degraded,
+        usage: spent?.total || null,
       });
     }
 
@@ -68,30 +71,39 @@ export async function POST(request, { params }) {
 
     if (from <= total) {
       const to = Math.min(total, from + BATCH - 1);
-      const { days, degraded } = await generateDays(trip.brief, trip.plan, from, to);
-      const result = await appendDays(params.id, days, total);
+      const { days, degraded, usage } = await generateDays(trip.brief, trip.plan, from, to);
+      const spent = foldUsage(trip.usage, "days", usage);
+      const result = await appendDays(params.id, days, total, spent);
       return Response.json({
         phase: "days",
         done: false,
         progress: { written: result.days.length, total },
         range: [from, to],
         degraded,
+        usage: spent?.total || null,
       });
     }
 
     /* Phase 3 — le volet pratique, une fois le programme connu. */
     if (!trip.practical) {
-      const { practical, degraded } = await generatePractical(trip.brief, trip.plan, trip.days);
-      await savePractical(params.id, practical);
+      const { practical, degraded, usage } = await generatePractical(trip.brief, trip.plan, trip.days);
+      const spent = foldUsage(trip.usage, "practical", usage);
+      await savePractical(params.id, practical, spent);
       return Response.json({
         phase: "practical",
         done: true,
         progress: { written: total, total },
         degraded,
+        usage: spent?.total || null,
       });
     }
 
-    return Response.json({ phase: "done", done: true, progress: { written: total, total } });
+    return Response.json({
+      phase: "done",
+      done: true,
+      progress: { written: total, total },
+      usage: trip.usage?.total || null,
+    });
   } catch (e) {
     const message = explain(e);
     const retryable = isRetryable(e);
