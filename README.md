@@ -27,8 +27,19 @@ n'a pas de disque persistant.
 | `DATABASE_URL` | Postgres. Absent en local → SQLite. **Requis en production.** |
 | `ODYSSEA_MODEL` | Optionnel. `claude-opus-5` par défaut. |
 
-Sur Vercel : créez une base Postgres depuis l'onglet Storage — `DATABASE_URL`
-est renseignée automatiquement — puis ajoutez `ANTHROPIC_API_KEY`.
+### Supabase
+
+Project Settings → Database → Connection string → onglet **Transaction pooler**
+(port 6543). Prenez celui-là, pas la connexion directe : un pooler en mode
+transaction est ce qui convient à des fonctions serverless, qui ouvrent et
+ferment une connexion à chaque appel. Remplacez `[YOUR-PASSWORD]` par le mot de
+passe de la base.
+
+Le pilote est configuré en conséquence : une connexion par instance,
+requêtes préparées désactivées (un pooler en mode transaction ne les conserve
+pas entre deux transactions), TLS exigé.
+
+Les tables sont créées au premier accès — il n'y a pas de migration à lancer.
 
 ## Comment un voyage est composé
 
@@ -89,7 +100,7 @@ app/
 lib/
   claude.js       génération (Opus 5 + recherche web + sortie contrainte)
   trip-schema.js  la forme d'un voyage
-  db.js           Postgres en production, SQLite en développement
+  db.js           Postgres (Supabase, Neon…) en production, SQLite en développement
   auth.js         mots de passe et sessions
   weather.js      Open-Meteo
   places.js       recherche mondiale d'aéroports et de destinations
