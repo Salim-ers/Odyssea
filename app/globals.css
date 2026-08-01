@@ -1662,3 +1662,11 @@ body[data-composer="open"] .cookiebar{opacity:0;visibility:hidden;pointer-events
   .splash-sun{transform:translate(-50%,50%)}
   .splash-note::after{width:1.7em}
 }
+
+/* Ce que la composition fait à la seconde : la ligne la plus utile de
+   l'écran, parce qu'elle prouve que le travail avance. */
+.gen-doing{margin-top:12px;display:flex;align-items:center;gap:9px;min-height:20px;
+  font-size:12.5px;color:var(--muted-2);transition:color .3s}
+.gen-doing svg{width:14px;height:14px;flex:none;opacity:.75}
+.gen-doing.on{color:var(--amber-deep)}
+.gen-doing span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
