@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   questionsFor,
   STYLE_CARDS,
@@ -30,6 +30,27 @@ export default function Onboarding() {
   const [gen, setGen] = useState(null);
   const [sending, setSending] = useState(false);
   const router = useRouter();
+  const params = useSearchParams();
+  const resume = params.get("resume");
+
+  /* Une composition interrompue se reprend là où elle s'est arrêtée : le
+     brief est déjà en base, les phases écrites aussi. On rouvre donc l'écran
+     de composition sur ce voyage plutôt que de reposer les questions. */
+  useEffect(() => {
+    if (!resume) return;
+    let alive = true;
+    fetch(`/api/trips/${resume}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive) return;
+        if (!d.trip) return toast(d.error || "Ce voyage est introuvable.");
+        setGen({ id: d.trip.id, totalDays: d.trip.totalDays, brief: d.trip.brief });
+      })
+      .catch((e) => alive && toast("Reprise impossible : " + e.message));
+    return () => {
+      alive = false;
+    };
+  }, [resume, toast]);
 
   const list = useMemo(() => questionsFor(o), [o]);
   const total = list.length;
@@ -137,7 +158,7 @@ export default function Onboarding() {
       <Generating
         tripId={gen.id}
         totalDays={gen.totalDays}
-        ob={o}
+        ob={gen.brief || o}
         onDone={() => router.push(`/voyage/${gen.id}`)}
         onError={(m) => { toast(m); setGen(null); }}
       />
