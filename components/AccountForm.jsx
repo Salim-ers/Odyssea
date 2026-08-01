@@ -50,7 +50,7 @@ export default function AccountForm({ claimTripId }) {
   const isSignup = mode === "signup";
 
   return (
-    <main className="onb on-dark">
+    <main className="onb">
       <div className="onb-bar">
         <Wordmark />
         <Link className="btn btn-quiet small" href="/">
@@ -59,7 +59,7 @@ export default function AccountForm({ claimTripId }) {
       </div>
 
       <div className="account-wrap">
-        <div className="kicker gold">{isSignup ? "Créer un compte" : "Se connecter"}</div>
+        <div className="kicker" style={{ color: "var(--amber-deep)" }}>{isSignup ? "Créer un compte" : "Se connecter"}</div>
         <h1 className="ob-q" style={{ marginTop: 12 }}>
           {isSignup ? "Gardez vos voyages." : "Bon retour."}
         </h1>

@@ -217,7 +217,7 @@ export default function Onboarding() {
   ];
 
   return (
-    <div className="onb on-dark">
+    <div className="onb">
       <div className="onb-bar">
         <Wordmark />
         <div className="onb-recap">
