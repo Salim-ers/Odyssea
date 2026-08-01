@@ -456,9 +456,15 @@ export function Weather({ trip }) {
                   <div className="t">
                     {d.tmax != null ? `${d.tmax}°` : "—"} <i>{d.tmin != null ? `${d.tmin}°` : ""}</i>
                   </div>
+                  {/* Une prévision donne une probabilité, une normale un cumul
+                      moyen : deux grandeurs différentes, deux unités. */}
                   <div className="r">
-                    {d.rain != null ? `${d.rain} %` : "—"}
-                    {d.kind === "normal" && <span title="Moyenne des 5 dernières années"> ~</span>}
+                    {d.rain != null
+                      ? `${d.rain} %`
+                      : d.rainMm != null
+                        ? `${d.rainMm} mm`
+                        : "—"}
+                    {d.kind === "normal" && <span title="Moyenne des cinq dernières années"> ~</span>}
                   </div>
                 </div>
               );

@@ -656,7 +656,9 @@ button.chip.on{background:#061E2A;color:var(--cream)}
 .vtotal p.sub{margin-top:10px;font-size:11.5px;color:rgba(252,251,248,.45)}
 
 /* --- Météo --- */
-.wxstrip{margin-top:16px;display:grid;grid-template-columns:repeat(6,1fr);gap:9px}
+/* Une grille à six colonnes laissait le septième jour seul sur sa ligne. Les
+   colonnes s ajustent maintenant au nombre de journées. */
+.wxstrip{margin-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(102px,1fr));gap:9px}
 .wx{border:1px solid rgba(9,24,45,.08);border-radius:16px;padding:14px 8px;text-align:center;background:var(--white)}
 .wx .d{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--muted-2);text-transform:uppercase}
 .wx svg{width:24px;height:24px;margin:9px auto 6px;display:block;color:var(--amber-deep)}
@@ -735,11 +737,10 @@ button.chip.on{background:#061E2A;color:var(--cream)}
 #dock{display:none}
 
 /* ---------- Responsive ---------- */
-@media(max-width:1020px){.wxstrip{grid-template-columns:repeat(4,1fr)}}
+
 @media(max-width:760px){
   
   .vgrid,.pick-grid{grid-template-columns:1fr}
-  .wxstrip{grid-template-columns:repeat(3,1fr)}
   .onb .dates2{grid-template-columns:1fr}
   .app{padding-bottom:130px}
   .tabszone{display:none}
@@ -766,6 +767,14 @@ button.chip.on{background:#061E2A;color:var(--cream)}
 }
 @media(max-width:430px){
   .app-bar .right .btn-line{display:none}
+  /* Sous 390 px, la marque centrée et le bouton se rejoignaient. La marque
+     perd son emblème — le mot suffit à identifier le site — et le bouton se
+     réduit à son verbe. */
+  .app-bar .wordmark.stacked .wm-mark{display:none}
+  .app-bar .wordmark .wm-letters,.app-bar .wordmark .wm-lam{font-size:15px}
+  .app-bar .wordmark .wm-letters{letter-spacing:.2em}
+  .app-bar .right .btn{padding:8px 12px;font-size:11.5px}
+  .app-bar .right .btn .long{display:none}
 }
 
 @media(prefers-reduced-motion:reduce){
