@@ -1,38 +1,21 @@
 import Link from "next/link";
+import TripMap from "./TripMap";
 import { kindOf, KINDS } from "../lib/kinds";
 import { Icon } from "../lib/icons";
 
 /* Vitrine de l'accueil : un vrai voyage composé, pas un exemple écrit à la
-   main. Il est généré une fois, mis en cache côté serveur, et rendu ici tel
-   qu'un utilisateur le verrait. */
+   main. Carte du trajet à gauche, programme jour par jour à droite — le même
+   objet que celui qu'un utilisateur reçoit à la fin. */
 
 const fr = (iso) =>
   new Date(iso + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
 
-export default function Showcase({ trip }) {
-  if (!trip) {
-    return (
-      <section className="mapsec" id="methode">
-        <div className="in">
-          <div className="map-head">
-            <div className="kicker gold">Un voyage composé</div>
-            <h2>Voyez ce qu&apos;Odyssea produit.</h2>
-            <p>
-              La vitrine se compose au premier passage. En attendant, lancez la vôtre : donnez une
-              destination, des dates, et regardez.
-            </p>
-            <Link className="btn btn-gold" href="/parcours" style={{ marginTop: 22 }}>
-              <Icon name="spark" />
-              Composer mon voyage
-            </Link>
-          </div>
-        </div>
-      </section>
-    );
-  }
+export default function Showcase({ trip, worldPath }) {
+  if (!trip) return <Waiting worldPath={worldPath} />;
 
   const { plan, days, brief } = trip;
   const shown = days.slice(0, 3);
+  const rest = days.length - shown.length;
 
   return (
     <section className="mapsec" id="methode">
@@ -45,7 +28,9 @@ export default function Showcase({ trip }) {
 
         <div className="show-grid">
           <aside className="show-side">
-            <div className="card">
+            <TripMap stops={plan.stops} worldPath={worldPath} />
+
+            <div className="card" style={{ marginTop: 18 }}>
               <div className="kicker steel">Le parcours</div>
               <ol className="show-stops">
                 {plan.stops.map((s, i) => (
@@ -78,8 +63,11 @@ export default function Showcase({ trip }) {
             {plan.sources?.length ? (
               <p className="map-credit">
                 Composé à partir de {plan.sources.length} sources consultées en direct.
+                Fond de carte © Natural Earth.
               </p>
-            ) : null}
+            ) : (
+              <p className="map-credit">Fond de carte © Natural Earth.</p>
+            )}
           </aside>
 
           <div className="map-side">
@@ -111,12 +99,77 @@ export default function Showcase({ trip }) {
 
             <div className="show-more">
               <p>
-                Et {days.length - shown.length} journées de plus, avec les vols, l&apos;hébergement, le
-                budget et les pièges de l&apos;itinéraire.
+                {rest > 0
+                  ? `Et ${rest} journées de plus, avec les vols, l'hébergement, le budget et les pièges de l'itinéraire.`
+                  : "Avec les vols, l'hébergement, le budget et les pièges de l'itinéraire."}
               </p>
               <Link className="btn btn-gold" href="/parcours">
                 <Icon name="spark" />
                 Composer le mien
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* Tant qu'aucun voyage n'a été composé, la section montre ce qu'elle
+   produira : la carte du monde, et ce qu'on obtient à l'arrivée. */
+function Waiting({ worldPath }) {
+  const teaser = [
+    ["map", "La carte de votre trajet", "Chaque étape située, chaque trajet compté."],
+    ["list", "Chaque journée, heure par heure", "Lieux réels, horaires vérifiés, et la raison d'être de chaque moment."],
+    ["plane", "Les vols et l'hébergement", "Les compagnies qui desservent l'axe, le quartier où loger, les ordres de prix."],
+    ["shield", "Les pièges de l'itinéraire", "Marges trop courtes, journées trop chargées, musées fermés ce jour-là."],
+  ];
+
+  return (
+    <section className="mapsec" id="methode">
+      <div className="in">
+        <div className="map-head">
+          <div className="kicker gold">Ce qu'Odyssea compose</div>
+          <h2>Un voyage entier, écrit pour vous.</h2>
+          <p>
+            Pas un modèle rempli : une recherche menée sur le web au moment où vous la demandez,
+            puis un itinéraire écrit heure par heure et vérifié.
+          </p>
+        </div>
+
+        <div className="show-grid">
+          <aside className="show-side">
+            <TripMap
+              worldPath={worldPath}
+              stops={[
+                { name: "Paris", lat: 48.86, lon: 2.35 },
+                { name: "Lisbonne", lat: 38.72, lon: -9.14 },
+                { name: "Marrakech", lat: 31.63, lon: -8.0 },
+              ]}
+            />
+            <p className="map-credit">Fond de carte © Natural Earth.</p>
+          </aside>
+
+          <div className="map-side">
+            {teaser.map(([icon, title, detail]) => (
+              <article className="show-teaser" key={title}>
+                <span className="ic">
+                  <Icon name={icon} />
+                </span>
+                <div>
+                  <b>{title}</b>
+                  <span>{detail}</span>
+                </div>
+              </article>
+            ))}
+            <div className="show-more">
+              <p>
+                Cette vitrine affichera votre premier voyage composé, tel qu'il sort de la
+                génération.
+              </p>
+              <Link className="btn btn-gold" href="/parcours">
+                <Icon name="spark" />
+                Composer mon voyage
               </Link>
             </div>
           </div>

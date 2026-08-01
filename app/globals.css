@@ -1471,3 +1471,36 @@ body[data-composer="open"] .cookiebar{opacity:0;visibility:hidden;pointer-events
   .wordmark.stacked .wm-letters,.wordmark.stacked .wm-lam{font-size:20px}
   .wordmark.stacked .wm-letters{letter-spacing:.26em}
 }
+
+/* ---------- Carte d'un voyage composé ---------- */
+.tmap{position:relative;border-radius:20px;overflow:hidden;
+  border:1px solid rgba(9,24,45,.09);background:linear-gradient(170deg,#EEF3F5,#E7EFF1);
+  box-shadow:0 30px 70px -56px rgba(3,20,26,.7);aspect-ratio:620/460}
+.tmap svg{display:block;width:100%;height:100%}
+.tm-grid line{stroke:rgba(9,24,45,.06);stroke-width:.8;vector-effect:non-scaling-stroke}
+.tm-land{fill:#0A2733;opacity:.9}
+.tm-route-halo{fill:none;stroke:rgba(252,251,248,.5);stroke-linecap:round;stroke-linejoin:round}
+.tm-route{fill:none;stroke:url(#tm-route);stroke-linecap:round;stroke-linejoin:round;
+  filter:drop-shadow(0 0 5px rgba(224,129,60,.7))}
+.tm-halo{fill:rgba(246,172,99,.3);transform-box:fill-box;transform-origin:center;
+  animation:breathe 3s ease-in-out infinite}
+.tm-ring{fill:none;stroke:var(--amber-hi)}
+.tm-dot{fill:#fff}
+.tm-tag{position:absolute;transform:translate(-50%,-200%);white-space:nowrap;pointer-events:none;
+  display:inline-flex;align-items:baseline;gap:7px;
+  padding:5px 12px;border-radius:999px;font-size:12px;font-weight:500;
+  background:rgba(252,251,248,.95);color:var(--navy);box-shadow:0 8px 20px -10px rgba(3,20,26,.7)}
+.tm-tag b{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--amber-deep)}
+
+/* Ce que la vitrine montre tant qu'aucun voyage n'a été composé. */
+.show-teaser{display:flex;gap:16px;align-items:flex-start;padding:20px 0;
+  border-bottom:1px solid rgba(9,24,45,.07)}
+.show-teaser:last-of-type{border-bottom:none}
+.show-teaser .ic{flex:none;width:40px;height:40px;border-radius:13px;display:flex;
+  align-items:center;justify-content:center;background:var(--panel-2);color:var(--amber-deep)}
+.show-teaser .ic svg{width:18px;height:18px}
+.show-teaser b{display:block;font-family:var(--sora);font-weight:500;font-size:16px;color:var(--ink)}
+.show-teaser span{display:block;margin-top:4px;font-size:13.5px;line-height:1.6;color:var(--muted)}
+/* Deux étapes voisines auraient des étiquettes superposées : on les alterne
+   au-dessus et au-dessous du repère. */
+.tm-tag.low{transform:translate(-50%,100%)}

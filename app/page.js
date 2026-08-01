@@ -1,3 +1,5 @@
+import fs from "node:fs/promises";
+import path from "node:path";
 import Navbar from "../components/Navbar";
 import Stage from "../components/Stage";
 import Gallery from "../components/Gallery";
@@ -8,23 +10,32 @@ import { getShowcase } from "../lib/trips";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
-  /* La vitrine est un vrai voyage, généré une fois et mis en cache. Si elle
-     n'existe pas encore (ou si la base n'est pas là), la section le dit. */
-  let trip = null;
-  try {
-    const cached = await getShowcase("accueil");
-    trip = cached?.trip ?? null;
-  } catch {
-    trip = null;
+/* Le fond de carte est lu une fois au démarrage du serveur : la vitrine est
+   rendue côté serveur, complète, sans rien télécharger côté navigateur. */
+let worldPromise = null;
+function world() {
+  if (!worldPromise) {
+    worldPromise = fs
+      .readFile(path.join(process.cwd(), "public", "data", "world-land.json"), "utf8")
+      .then((raw) => JSON.parse(raw).d)
+      .catch(() => null);
   }
+  return worldPromise;
+}
+
+export default async function Home() {
+  /* La vitrine prend le voyage désigné, sinon le dernier composé. */
+  const [cached, worldPath] = await Promise.all([
+    getShowcase("accueil").catch(() => null),
+    world(),
+  ]);
 
   return (
     <div className="home">
       <Navbar />
       <Stage />
       <Gallery />
-      <Showcase trip={trip} />
+      <Showcase trip={cached?.trip ?? null} worldPath={worldPath} />
       <Footer />
       <CookieBar />
     </div>
