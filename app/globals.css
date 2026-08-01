@@ -165,32 +165,43 @@ button.chip.on{background:#061E2A;color:var(--cream)}
   to{opacity:0}
 }
 
-.prog{position:relative;margin-top:20px;height:44px}
-.prog .track,.prog .fill,.prog .wake{position:absolute;top:21px;left:0;height:2px;border-radius:2px}
-.prog .track{right:0;background:rgba(9,24,45,.1)}
-.prog .fill{background:linear-gradient(90deg,var(--teal-2),var(--amber));
+/* Le rail est en retrait des deux côtés de la demi-largeur de l'avion : il
+   ne dépasse donc jamais, même posé sur la première ou la dernière étape.
+   Une seule variable --p (0 à 1) place la traînée, le sillage et l'avion, ce
+   qui garantit qu'ils restent alignés entre eux et sur la ligne. */
+.prog{--pad:27px;position:relative;margin-top:22px;height:46px}
+.prog .track,.prog .fill,.prog .wake{position:absolute;top:22px;left:var(--pad);height:2px;border-radius:2px;
+  transform:translateY(-50%)}
+.prog .track{right:var(--pad);background:rgba(9,24,45,.09)}
+.prog .fill{width:calc((100% - var(--pad) * 2) * var(--p));
+  background:linear-gradient(90deg,var(--teal-2),var(--amber));
+  box-shadow:0 0 18px rgba(224,129,60,.35);
   transition:width .8s cubic-bezier(.34,1.06,.4,1)}
 /* Le sillage : un halo qui s'étire derrière l'avion et s'efface. */
-.prog .wake{height:8px;top:18px;border-radius:8px;opacity:0;pointer-events:none;
-  background:linear-gradient(90deg,transparent,rgba(224,129,60,.34));
+.prog .wake{height:10px;border-radius:10px;opacity:0;pointer-events:none;
+  width:calc((100% - var(--pad) * 2) * var(--p));
+  background:linear-gradient(90deg,transparent,rgba(224,129,60,.32));
   transition:width .8s cubic-bezier(.34,1.06,.4,1)}
 .prog.flying .wake{animation:wakeSweep .9s var(--ease) both}
 
-.prog .nodes{position:relative;top:8px;display:flex;align-items:center;justify-content:space-between}
+/* La rangée de points est centrée sur la ligne, pas posée en dessous. */
+.prog .nodes{position:absolute;left:var(--pad);right:var(--pad);top:22px;transform:translateY(-50%);
+  display:flex;align-items:center;justify-content:space-between}
 .prog .node{width:9px;height:9px;border-radius:50%;border:1px solid rgba(9,24,45,.16);
   background:var(--paper-2);padding:0;cursor:pointer;
-  transition:background .35s var(--ease),border-color .35s var(--ease),width .35s var(--ease),height .35s var(--ease)}
-.prog .node:hover{border-color:var(--amber)}
+  transition:background .35s var(--ease),border-color .35s var(--ease),transform .35s var(--ease)}
+.prog .node:hover{border-color:var(--amber);transform:scale(1.35)}
 .prog .node.done{background:var(--teal-2);border-color:var(--teal-2);animation:nodeLand .5s var(--ease)}
 /* L'étape courante reste discrète : c'est l'avion qui marque la position. */
 .prog .node.cur{background:var(--amber);border-color:var(--amber);animation:nodeLand .55s var(--ease)}
 
-/* L'avion lui-même : deux facettes pour lui donner du volume, et une ombre
-   portée ambre qui le décolle du rail. */
-.prog .plane{position:absolute;top:21px;transform:translate(-62%,-50%);
+/* L'avion : deux facettes pour le volume, une ombre ambre qui le décolle. */
+.prog .plane{position:absolute;top:22px;
+  left:calc(var(--pad) + (100% - var(--pad) * 2) * var(--p));
+  transform:translate(-62%,-50%);
   transition:left .8s cubic-bezier(.34,1.06,.4,1);will-change:left,transform;
-  filter:drop-shadow(0 6px 14px rgba(224,129,60,.5))}
-.prog .plane svg{width:38px;height:38px;display:block;overflow:visible}
+  filter:drop-shadow(0 7px 16px rgba(224,129,60,.55))}
+.prog .plane svg{width:40px;height:40px;display:block;overflow:visible}
 .prog .plane .hull{fill:var(--amber)}
 .prog .plane .wing{fill:var(--amber-deep);opacity:.75}
 .prog.flying .plane{animation:planeLean .9s cubic-bezier(.34,1.06,.4,1)}
@@ -1319,3 +1330,66 @@ body[data-composer="open"] .cookiebar{opacity:0;visibility:hidden;pointer-events
 .pick:active{transform:translateY(-1px) scale(.99);transition-duration:.09s}
 .ob-count-ctl button:active{transform:scale(.9);transition-duration:.09s}
 .ob-nav .btn{transition:transform .35s var(--ease),box-shadow .35s var(--ease),background .3s,border-color .3s,color .3s}
+
+/* ============================================================
+   QUESTIONNAIRE — l'atmosphère
+   Trois couches très discrètes qui donnent de la profondeur sans jamais
+   entrer en concurrence avec la question posée.
+   ============================================================ */
+
+/* 1. Les halos dérivent très lentement : la page respire au lieu d'être un
+      aplat. Trente secondes par cycle — perceptible sans être remarqué. */
+@keyframes auroraDrift{
+  0%,100%{transform:translate3d(0,0,0) scale(1)}
+  50%{transform:translate3d(-3%,2%,0) scale(1.12)}
+}
+.onb{position:relative;isolation:isolate;overflow-x:clip;background:linear-gradient(180deg,var(--paper) 0%,var(--paper-2) 46%)}
+.onb::before{content:"";position:fixed;inset:-15%;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(760px 520px at 84% 6%,rgba(224,129,60,.16),transparent 62%),
+    radial-gradient(620px 480px at 2% 18%,rgba(95,179,191,.15),transparent 60%),
+    radial-gradient(520px 420px at 62% 92%,rgba(224,129,60,.08),transparent 62%);
+  animation:auroraDrift 34s ease-in-out infinite}
+
+/* 2. Un grain de papier très fin. C'est ce qui sépare un aplat d'écran d'une
+      surface imprimée — invisible isolément, sensible sur toute la page. */
+.onb::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.055'/%3E%3C/svg%3E")}
+
+/* 3. Le numéro de l'étape, immense et presque effacé. Un repère éditorial :
+      on sait où on en est sans avoir à lire. */
+.ob-ghost{position:absolute;right:clamp(-10px,1vw,20px);top:clamp(40px,9vh,96px);z-index:-1;
+  font-family:var(--serif);font-weight:300;font-size:clamp(150px,26vw,340px);line-height:.8;
+  color:var(--navy);opacity:.045;letter-spacing:-.04em;pointer-events:none;user-select:none;
+  animation:ghostIn .9s var(--ease) both}
+@keyframes ghostIn{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:.045;transform:none}}
+.onb-wrap{position:relative}
+@media(max-width:860px){.ob-ghost{display:none}}
+
+/* Le titre appelle la question : un filet ambre court, posé au-dessus. */
+.ob-q::before{content:"";display:block;width:44px;height:2px;border-radius:2px;margin-bottom:22px;
+  background:linear-gradient(90deg,var(--amber),rgba(224,129,60,0));
+  animation:railIn .7s .1s var(--ease) both}
+@keyframes railIn{from{width:0;opacity:0}to{width:44px;opacity:1}}
+
+/* Les cartes de choix reçoivent un balayage de lumière au survol — le même
+   geste que le bouton principal de l'accueil, en beaucoup plus sourd. */
+.pick{isolation:isolate}
+.pick::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;border-radius:inherit;
+  opacity:0;transition:opacity .5s var(--ease);
+  background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.6) 48%,transparent 66%)}
+.pick:hover::after{opacity:1}
+.pick .ic{transition:transform .45s var(--ease),background .35s,color .35s}
+.pick:hover .ic{transform:translateY(-2px) rotate(-4deg);background:var(--amber-soft)}
+
+/* Le champ de saisie prend de la présence quand on écrit dedans. */
+.ob-input{box-shadow:0 18px 44px -40px rgba(3,20,26,.7)}
+.ob-input:focus{box-shadow:0 0 0 3px var(--amber-soft),0 22px 50px -34px rgba(224,129,60,.55)}
+
+/* Le compteur d'étape et l'indice se répondent en haut de page. */
+.onb-head .st{position:relative;padding-left:16px}
+.onb-head .st::before{content:"";position:absolute;left:0;top:50%;width:8px;height:8px;border-radius:50%;
+  transform:translateY(-50%);background:var(--amber);box-shadow:0 0 0 4px rgba(224,129,60,.16)}
+
+/* Le pied du parcours : les deux boutons ne flottent plus dans le vide. */
+.ob-nav{padding-top:30px;border-top:1px solid rgba(9,24,45,.07)}

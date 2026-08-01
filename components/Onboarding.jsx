@@ -12,7 +12,7 @@ export default function Onboarding() {
   const [gen, setGen] = useState(null);
   const [sending, setSending] = useState(false);
   const router = useRouter();
-  const pct = Math.round((o.step / (OB_STEPS - 1)) * 100);
+  const progress = o.step / (OB_STEPS - 1);
 
   /* La direction du dernier saut fait entrer la question du bon côté : on
      avance, elle vient de la droite ; on revient, elle vient de la gauche.
@@ -246,15 +246,20 @@ export default function Onboarding() {
         </div>
       </div>
       <div className="onb-wrap">
+        {/* Le numéro de l'étape, en très grand et presque effacé : un repère
+            qu'on lit sans le regarder. */}
+        <span className="ob-ghost" aria-hidden="true">{String(o.step + 1).padStart(2, "0")}</span>
         <div className="onb-head">
           <span className="st">Étape {o.step + 1} sur {OB_STEPS}</span>
           <span className="hint">{OB_HINTS[o.step]}</span>
         </div>
-        <div className={"prog" + (flying ? " flying" : "")}>
+        {/* La position est portée par une seule variable, sans unité : le rail,
+            la traînée et l'avion s'y accrochent tous, et restent alignés. */}
+        <div className={"prog" + (flying ? " flying" : "")} style={{ "--p": progress }}>
           <span className="track" />
-          <span className="fill" style={{ width: pct + "%" }} />
-          <span className="wake" style={{ width: pct + "%" }} aria-hidden="true" />
-          <span className="plane" style={{ left: pct + "%" }} aria-hidden="true">
+          <span className="fill" />
+          <span className="wake" aria-hidden="true" />
+          <span className="plane" aria-hidden="true">
             <svg viewBox="0 0 24 24">
               <path className="hull" d="M1 21 L23 12 L1 3 L5.5 12 Z" />
               <path className="wing" d="M5.5 12 L23 12 L1 21 Z" />
