@@ -22,13 +22,15 @@ import {
   explain,
   isRetryable,
 } from "../../../../../lib/claude";
+import { PROFILE } from "../../../../../lib/profile";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
-/** Journées produites par appel : assez pour avancer vite, assez peu pour tenir. */
-const BATCH = 4;
+/** Journées produites par appel : assez pour avancer vite, assez peu pour tenir
+    sous la durée maximale d une fonction serverless. Le réglage le fixe. */
+const BATCH = PROFILE.batch;
 
 export async function POST(request, { params }) {
   if (!isConfigured()) {
