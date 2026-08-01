@@ -24,6 +24,21 @@ export default function Onboarding() {
   const toggleList = (key, v) =>
     patchOb((ob) => ({ [key]: ob[key].includes(v) ? ob[key].filter((x) => x !== v) : [...ob[key], v] }));
 
+  /* Solo et couple valent 1 et 2 : inutile de faire compter l'utilisateur. */
+  const FIXED = { Solo: 1, Couple: 2 };
+  const asksCount = !FIXED[o.group];
+  const setGroup = (g) => patchOb((ob) => {
+    if (FIXED[g]) return { group: g, adults: FIXED[g], kids: 0, trav: FIXED[g] };
+    const adults = Math.max(g === "Amis" ? 2 : 1, ob.adults || 2);
+    const kids = ob.kids || 0;
+    return { group: g, adults, kids, trav: adults + kids };
+  });
+  const setCount = (key, v) => patchOb((ob) => {
+    const adults = key === "adults" ? v : ob.adults;
+    const kids = key === "kids" ? v : ob.kids;
+    return { adults, kids, trav: adults + kids };
+  });
+
   if (gen) return <Generating onDone={() => { patch(() => ({ started: true })); router.push("/voyage"); }} />;
 
   const steps = [
@@ -56,16 +71,33 @@ export default function Onboarding() {
     <div key="2">
       <h2 className="ob-q">Qui partagera ce voyage avec vous&nbsp;?</h2>
       <p className="ob-sub">Cela change le rythme, les hébergements et les adresses proposées.</p>
-      <div className="big-counter">
-        <button aria-label="Retirer un voyageur" onClick={() => patchOb((ob) => ({ trav: Math.max(1, ob.trav - 1) }))}>−</button>
-        <span className="n">{o.trav}</span>
-        <button aria-label="Ajouter un voyageur" onClick={() => patchOb((ob) => ({ trav: Math.min(12, ob.trav + 1) }))}>+</button>
-      </div>
-      <div className="chiprow" style={{ justifyContent: "center" }}>
+      <div className="chiprow" style={{ justifyContent: "center", marginTop: 26 }}>
         {["Solo", "Couple", "Famille", "Amis", "Pro"].map((g) => (
-          <button key={g} className={"d-chip" + (o.group === g ? " on" : "")} onClick={() => patchOb(() => ({ group: g }))}>{g}</button>
+          <button key={g} className={"d-chip" + (o.group === g ? " on" : "")} onClick={() => setGroup(g)}>{g}</button>
         ))}
       </div>
+      {/* Solo ou couple : le nombre est déjà connu, on ne le redemande pas. */}
+      {asksCount ? (
+        <div className="ob-counts">
+          {[["adults", "Adultes", "18 ans et plus", o.group === "Amis" ? 2 : 1, 12],
+            ["kids", "Enfants", "moins de 18 ans", 0, 8]].map(([key, label, sub, min, max]) => (
+            <div className="ob-count" key={key}>
+              <div><b>{label}</b><span>{sub}</span></div>
+              <div className="ob-count-ctl">
+                <button aria-label={`Retirer — ${label}`} disabled={o[key] <= min}
+                  onClick={() => setCount(key, Math.max(min, o[key] - 1))}>−</button>
+                <span className="n">{o[key]}</span>
+                <button aria-label={`Ajouter — ${label}`} disabled={o[key] >= max}
+                  onClick={() => setCount(key, Math.min(max, o[key] + 1))}>+</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="ob-sub" style={{ textAlign: "center", marginTop: 26 }}>
+          {o.group === "Solo" ? "Vous voyagez seul — rien d'autre à préciser." : "À deux — rien d'autre à préciser."}
+        </p>
+      )}
       {o.group === "Couple" && (
         <div className="subcard">
           <h3><span className="orb" />Est-ce une occasion particulière&nbsp;?</h3>

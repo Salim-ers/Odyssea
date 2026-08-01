@@ -16,6 +16,9 @@ const initialState = {
     dest: "Malaisie",
     dep: "2026-10-03",
     ret: "2026-10-14",
+    /* trav = total, toujours égal à adults + kids. */
+    adults: 2,
+    kids: 0,
     trav: 2,
     group: "Couple",
     occasion: null,

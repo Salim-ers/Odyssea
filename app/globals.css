@@ -176,6 +176,19 @@ button.chip.on{background:var(--navy);color:var(--cream)}
 .big-counter button{width:48px;height:48px;border-radius:50%;border:1px solid var(--cream-14);color:var(--steel-2);font-size:23px;transition:all .16s;display:flex;align-items:center;justify-content:center}
 .big-counter button:hover{border-color:var(--gold);color:var(--gold)}
 .big-counter .n{font-family:var(--sora);font-weight:200;font-size:52px;min-width:70px;text-align:center}
+/* Adultes / enfants, demandés seulement quand le groupe le justifie. */
+.ob-counts{margin-top:28px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ob-count{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-radius:18px;
+  border:1px solid var(--cream-14);background:rgba(252,251,248,.04)}
+.ob-count b{display:block;font-size:15px;font-weight:500;color:var(--cream)}
+.ob-count span{display:block;font-size:12px;color:rgba(252,251,248,.45);margin-top:2px}
+.ob-count-ctl{display:flex;align-items:center;gap:12px}
+.ob-count-ctl button{width:34px;height:34px;border-radius:50%;border:1px solid var(--cream-14);color:var(--steel-2);
+  font-size:19px;line-height:1;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.ob-count-ctl button:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+.ob-count-ctl button:disabled{opacity:.3;cursor:not-allowed}
+.ob-count-ctl .n{font-family:var(--sora);font-size:24px;min-width:28px;text-align:center;color:var(--cream)}
+@media(max-width:620px){.ob-counts{grid-template-columns:1fr}}
 .yn-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid rgba(252,251,248,.08)}
 .yn-row:last-of-type{border-bottom:none}
 .yn-row>span{font-size:14.5px}
@@ -669,8 +682,9 @@ button.chip.on{background:var(--navy);color:var(--cream)}
 .navbar{position:sticky;top:0;z-index:95;height:58px;display:flex;align-items:center;
   transition:background .5s var(--ease),box-shadow .5s var(--ease),border-color .5s var(--ease),backdrop-filter .4s;
   background:transparent;border-bottom:1px solid transparent}
-.navbar.solid{background:rgba(252,251,248,.72);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);
-  border-bottom-color:rgba(9,24,45,.09)}
+/* Une fois la scène passée, la barre prend le bleu profond du pied de page. */
+.navbar.solid{background:rgba(6,30,42,.86);backdrop-filter:saturate(160%) blur(22px);-webkit-backdrop-filter:saturate(160%) blur(22px);
+  border-bottom-color:rgba(252,251,248,.1);box-shadow:0 14px 34px -28px rgba(3,20,26,.9)}
 .navbar .in{width:100%;max-width:1180px;margin:0 auto;padding:0 clamp(18px,3vw,30px);display:flex;align-items:center;justify-content:space-between;gap:20px}
 /* Mot-symbole : même lettre que l'emblème, en plus grand.
    Le A final est une vraie lettre — plus lisible que l'ancien chevron. */
@@ -682,7 +696,7 @@ button.chip.on{background:var(--navy);color:var(--cream)}
 /* Le V retourné devient le chevron final, empattements compris. */
 .wordmark .wm-lam{display:inline-block;transform:rotate(180deg) translateY(.012em)}
 .wordmark:hover{opacity:.72}
-.navbar.solid .wordmark{color:var(--navy)}
+.navbar.solid .wordmark{color:var(--cream)}
 .onb-bar .wordmark,.app-bar .wordmark,.gen-brand .wordmark{color:var(--cream)}
 .onb-bar .wordmark .wm-letters,.app-bar .wordmark .wm-letters,
 .onb-bar .wordmark .wm-lam,.app-bar .wordmark .wm-lam{font-size:24px}
@@ -690,16 +704,17 @@ button.chip.on{background:var(--navy);color:var(--cream)}
 .navlinks a,.navlinks button.link{font-size:13.5px;font-weight:400;letter-spacing:.01em;color:rgba(255,255,255,.82);background:none;border:0;padding:0;cursor:pointer;
   transition:color .3s,opacity .3s;white-space:nowrap}
 .navlinks a:hover,.navlinks button.link:hover{color:#fff}
-.navbar.solid .navlinks a,.navbar.solid .navlinks button.link{color:rgba(9,24,45,.66)}
-.navbar.solid .navlinks a:hover,.navbar.solid .navlinks button.link:hover{color:var(--navy)}
+.navbar.solid .navlinks a,.navbar.solid .navlinks button.link{color:rgba(252,251,248,.72)}
+.navbar.solid .navlinks a:hover,.navbar.solid .navlinks button.link:hover{color:#fff}
 .nav-cta{padding:9px 19px;border-radius:999px;font-size:13px;font-weight:500;letter-spacing:.01em;
   background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(10px);
   transition:transform .45s var(--ease),background .35s,border-color .35s,color .35s}
 .nav-cta:hover{transform:translateY(-1px);background:rgba(255,255,255,.24);border-color:rgba(255,255,255,.5)}
-/* La règle générique des liens gagnait sur celle du bouton : texte navy sur
-   fond navy, donc invisible une fois la barre opaque. */
-.navbar.solid .navlinks a.nav-cta{background:var(--navy);border-color:transparent;color:#fff}
-.navbar.solid .navlinks a.nav-cta:hover{background:var(--link);color:#fff}
+/* La règle générique des liens gagnait sur celle du bouton : il faut donc
+   au moins autant de spécificité pour garder le bouton lisible. */
+.navbar.solid .navlinks a.nav-cta{background:linear-gradient(180deg,var(--amber-hi),var(--amber));
+  border-color:transparent;color:#fff;box-shadow:0 10px 24px -14px rgba(224,129,60,.9)}
+.navbar.solid .navlinks a.nav-cta:hover{background:linear-gradient(180deg,#F9BC7C,var(--amber-hi));color:#fff}
 @media(max-width:760px){.navlinks a{display:none}
   .wordmark .wm-letters,.wordmark .wm-lam{font-size:23px}
   .wordmark .wm-letters{letter-spacing:.24em}}
@@ -819,9 +834,12 @@ button.ctrigger{cursor:pointer}
 .cfield:nth-last-of-type(-n+2) .cpanel{left:auto;right:0;transform-origin:top right}
 .cpanel::-webkit-scrollbar{width:8px}
 .cpanel::-webkit-scrollbar-thumb{background:rgba(9,24,45,.16);border-radius:8px;border:2px solid var(--paper-2)}
-.cpanel-hd{padding:9px 14px 7px;font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted-2)}
+.cpanel-hd{padding:9px 14px 7px;font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted-2);
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.cpanel-hd em{font-style:normal;font-family:var(--dm);font-size:11px;letter-spacing:0;text-transform:none;color:var(--muted-2);opacity:.85;text-align:right}
 .cpanel-hd.sub{padding-top:4px}
 .cpanel-empty{padding:14px;font-size:13px;color:var(--muted-2)}
+.cpanel-note{padding:6px 14px 12px;font-size:12.5px;line-height:1.55;color:var(--muted-2)}
 .cpanel .row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:13px;cursor:pointer;width:100%;background:none;border:0;text-align:left;
   transition:background .2s var(--ease)}
 .cpanel .row.cur,.cpanel .row:hover{background:var(--amber-soft)}
@@ -839,7 +857,9 @@ button.ctrigger{cursor:pointer}
 .cpanel .dates input{width:100%;padding:11px 13px;border-radius:12px;border:1px solid rgba(9,24,45,.14);outline:none;color-scheme:light;
   font-size:14px;transition:border-color .3s,box-shadow .3s}
 .cpanel .dates input:focus{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-soft)}
-.cpanel .counter-row{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:10px 12px}
+.cpanel .counter-row{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:11px 12px;
+  border-top:1px solid rgba(9,24,45,.07)}
+.cpanel .counter-row:first-of-type{border-top:none}
 .cpanel .counter{display:flex;align-items:center;gap:12px}
 .cstep{width:34px;height:34px;border-radius:50%;border:1px solid rgba(9,24,45,.16);color:var(--link);display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;transition:all .3s var(--ease)}
 .cstep:hover:not(:disabled){border-color:var(--amber);background:var(--amber-soft);color:var(--amber-deep)}
