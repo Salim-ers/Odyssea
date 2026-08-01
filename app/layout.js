@@ -1,5 +1,6 @@
 import "./globals.css";
 import { OdysseaProvider } from "../lib/store";
+import { currentUser } from "../lib/auth";
 import Toasts from "../components/Toasts";
 import ModalHost from "../components/ModalHost";
 
@@ -17,7 +18,11 @@ export const metadata = {
 
 export const viewport = { themeColor: "#03141A" };
 
-export default function RootLayout({ children }) {
+export const dynamic = "force-dynamic";
+
+export default async function RootLayout({ children }) {
+  /* La session est lue côté serveur : le cookie reste httpOnly. */
+  const user = await currentUser().catch(() => null);
   return (
     <html lang="fr">
       <head>
@@ -31,7 +36,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
-        <OdysseaProvider>
+        <OdysseaProvider initialUser={user}>
           {children}
           <Toasts />
           <ModalHost />

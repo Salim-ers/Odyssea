@@ -1,51 +1,89 @@
 "use client";
 import { useState } from "react";
-import Chrome from "./Chrome";
-import Dashboard from "./Dashboard";
-import Itinerary from "./Itinerary";
-import Flights from "./Flights";
-import Stays from "./Stays";
-import Rentals from "./Rentals";
-import Restaurants from "./Restaurants";
-import Weather from "./Weather";
-import Budget from "./Budget";
-import Checklist from "./Checklist";
-import Packing from "./Packing";
+import Link from "next/link";
+import Wordmark from "../Wordmark";
 import Assistant from "./Assistant";
+import { Overview, Itinerary, Flights, Stays, Weather, Budget, Practical } from "./screens";
 import { useOdyssea } from "../../lib/store";
+import { Icon } from "../../lib/icons";
 
-export default function TripApp() {
+const TABS = [
+  ["dash", "compass", "Aperçu"],
+  ["itin", "list", "Itinéraire"],
+  ["vols", "plane", "Vols"],
+  ["hotels", "bed", "Hébergement"],
+  ["meteo", "cloud", "Météo"],
+  ["budget", "wallet", "Budget"],
+  ["pratique", "shield", "Pratique"],
+];
+
+export default function TripApp({ trip }) {
   const [tab, setTab] = useState("dash");
   const [day, setDay] = useState(1);
-  const { setChatOpen, chat, setChat } = useOdyssea();
-
-  const openChat = (prefill) => {
-    setChatOpen(true);
-    if (!chat.length) {
-      setChat([{ role: "assistant", hello: true, txt: "Bonjour ! Je connais chaque détail de votre voyage en Malaisie. Posez-moi tout." }]);
-    }
-    if (prefill) setTimeout(() => document.querySelector("#chatpanel input")?.focus(), 300);
-  };
+  const { user } = useOdyssea();
 
   const screens = {
-    dash: <Dashboard setTab={setTab} openChat={openChat} />,
-    itin: <Itinerary day={day} setDay={setDay} openChat={openChat} />,
-    vols: <Flights />,
-    hotels: <Stays />,
-    loc: <Rentals setTab={setTab} />,
-    restos: <Restaurants openChat={openChat} />,
-    meteo: <Weather setTab={setTab} setDay={setDay} />,
-    budget: <Budget openChat={openChat} />,
-    check: <Checklist />,
-    valise: <Packing />,
+    dash: <Overview trip={trip} setTab={setTab} />,
+    itin: <Itinerary trip={trip} day={day} setDay={setDay} />,
+    vols: <Flights trip={trip} />,
+    hotels: <Stays trip={trip} />,
+    meteo: <Weather trip={trip} />,
+    budget: <Budget trip={trip} />,
+    pratique: <Practical trip={trip} />,
   };
 
   return (
-    <>
-      <Chrome tab={tab} setTab={setTab}>
-        <div className="view-enter" key={tab}>{screens[tab]}</div>
-      </Chrome>
-      <Assistant />
-    </>
+    <div className="app">
+      <div className="app-bar">
+        <Wordmark />
+        <div className="right">
+          {user ? (
+            <Link className="btn btn-line small" href="/mes-voyages">
+              Mes voyages
+            </Link>
+          ) : (
+            <Link className="btn btn-line small" href={`/compte?claim=${trip.id}`}>
+              Enregistrer ce voyage
+            </Link>
+          )}
+          <Link className="btn btn-gold small" href="/parcours">
+            <Icon name="spark" />
+            Nouveau voyage
+          </Link>
+        </div>
+      </div>
+
+      <div className="tabszone">
+        <nav className="tabs" role="tablist">
+          {TABS.map(([k, icon, label]) => (
+            <button
+              key={k}
+              role="tab"
+              aria-selected={tab === k}
+              className={"tab" + (tab === k ? " on" : "")}
+              onClick={() => setTab(k)}
+            >
+              <Icon name={icon} />
+              {label}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      <div className="view-enter" key={tab}>
+        {screens[tab]}
+      </div>
+
+      <nav id="dock" role="tablist">
+        {TABS.map(([k, icon, label]) => (
+          <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
+            <Icon name={icon} />
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      <Assistant trip={trip} />
+    </div>
   );
 }

@@ -7,7 +7,7 @@ import { useOdyssea } from "../lib/store";
 /* Transparente sur la vidéo, verre clair une fois la scène passée. */
 export default function Navbar() {
   const [solid, setSolid] = useState(false);
-  const { S } = useOdyssea();
+  const { user } = useOdyssea();
 
   useEffect(() => {
     const onScroll = () => setSolid(window.scrollY > window.innerHeight * 0.72);
@@ -27,7 +27,7 @@ export default function Navbar() {
         <div className="navlinks">
           <a href="#galerie">Explorer</a>
           <a href="#methode">L&apos;exemple</a>
-          {S.started && <Link className="link" href="/voyage">Mon voyage</Link>}
+          {user && <Link className="link" href="/mes-voyages">Mes voyages</Link>}
           <Link className="nav-cta" href="/parcours">Créer mon voyage</Link>
         </div>
       </div>

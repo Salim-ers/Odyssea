@@ -1,102 +1,105 @@
-# Odyssea — Next.js
+# Odyssea
 
-Compagnon de voyage : quelques réponses, et Odyssea compose l'itinéraire heure par heure,
-note les vols, justifie les hébergements, tient le budget et veille sur le voyage jusqu'au
-retour. Démo complète sur la Malaisie (12 jours, 59 étapes).
+Odyssea compose de vrais voyages : vous donnez une destination, des dates et un
+profil, l'application cherche sur le web, vérifie, et écrit un itinéraire heure
+par heure avec les vols, l'hébergement, le budget et les pièges du parcours.
 
-**Next.js 14 · App Router · JavaScript · aucune dépendance UI.**
-
----
+Rien n'est pré-écrit. Il n'y a aucun jeu de données d'exemple dans le dépôt.
 
 ## Démarrer
 
 ```bash
 npm install
-cp .env.example .env.local     # collez votre clé Anthropic
-npm run dev                    # http://localhost:3000
+cp .env.example .env.local   # renseignez ANTHROPIC_API_KEY
+npm run dev
 ```
 
-Sans clé, tout fonctionne : l'assistant bascule sur ses réponses préparées.
+Sans `DATABASE_URL`, les comptes et les voyages sont stockés dans une base
+SQLite locale (`.data/odyssea.db`), créée toute seule. C'est suffisant pour
+développer ; ce n'est pas suffisant en production, où une fonction serverless
+n'a pas de disque persistant.
 
-## Déployer sur Vercel
+## Variables d'environnement
 
-1. `git init && git add . && git commit -m "Odyssea"`, puis poussez sur GitHub.
-2. Sur vercel.com : *Add New → Project → Import*. Next.js est détecté automatiquement,
-   aucune configuration à saisir.
-3. *Settings → Environment Variables* : `ANTHROPIC_API_KEY` (Production, Preview,
-   Development). Redéployez.
+| Variable | Rôle |
+|---|---|
+| `ANTHROPIC_API_KEY` | **Obligatoire.** Composition des voyages et assistant. Reste côté serveur. |
+| `DATABASE_URL` | Postgres. Absent en local → SQLite. **Requis en production.** |
+| `ODYSSEA_MODEL` | Optionnel. `claude-opus-5` par défaut. |
 
-Ou en CLI : `npx vercel` puis `npx vercel --prod`.
+Sur Vercel : créez une base Postgres depuis l'onglet Storage — `DATABASE_URL`
+est renseignée automatiquement — puis ajoutez `ANTHROPIC_API_KEY`.
 
-## Routes
+## Comment un voyage est composé
 
-| Route        | Rendu     | Contenu |
-|--------------|-----------|---------|
-| `/`          | statique  | Vidéo, logo géant, barre de recherche, galerie, carte du voyage, pied de page RGPD |
-| `/parcours`  | statique  | Les 8 étapes puis l'écran de génération |
-| `/voyage`    | statique  | Les 10 onglets du voyage + assistant |
-| `/api/chat`  | serverless| Relais vers l'API Anthropic, clé côté serveur |
+La génération se fait en trois phases, une requête par phase. Ce découpage tient
+chaque appel sous la durée maximale d'une fonction serverless, et permet de
+reprendre une composition interrompue sans refaire ce qui est déjà écrit.
+
+1. **Le plan** — saison réelle sur les dates demandées, découpage en étapes,
+   compagnies qui desservent l'axe, quartiers où loger, budget.
+2. **Les journées** — le programme heure par heure, par lots de quatre jours.
+3. **Le pratique** — transport sur place, formalités, valise, et les pièges
+   réels de l'itinéraire (marges trop courtes, journées trop chargées,
+   fermetures).
+
+À chaque phase, le modèle consulte de vraies pages et cite ses sources. La
+sortie est contrainte par un schéma JSON : la réponse est conforme par
+construction. Le prompt interdit explicitement d'inventer un nom de lieu, un
+prix ou un horaire, et impose de distinguer un prix relevé d'une estimation.
+
+## Ce qui est réel, et ce qui ne l'est pas
+
+| Donnée | Source | Statut |
+|---|---|---|
+| Itinéraire, étapes, adresses, horaires | Recherche web pendant la composition | Réel, sourcé |
+| Météo | [Open-Meteo](https://open-meteo.com) — prévision sous 16 jours, moyenne des 5 dernières années au-delà | Réel |
+| Aéroports (4 034, 234 pays) | [OurAirports](https://ourairports.com), domaine public | Réel |
+| Prix des vols et des hôtels | Ordres de grandeur relevés à la composition | **Estimations** — les liens renvoient vers Google Flights et Booking pour les tarifs du jour |
+| Réservation | — | **Aucune.** Odyssea ne vend rien et n'encaisse rien. |
+
+Passer aux disponibilités et aux prix en direct demande un compte fournisseur
+(Amadeus, Duffel, Hotelbeds…). L'interface est prête à l'accueillir : c'est
+`lib/claude.js` qui produit aujourd'hui les estimations, et les écrans Vols et
+Hébergement lisent déjà une liste d'options.
+
+## Comptes
+
+Mot de passe haché avec scrypt et un sel par compte, comparaison à temps
+constant. Session par jeton aléatoire de 256 bits dans un cookie `httpOnly`,
+stocké haché : une fuite de la base ne permet pas d'usurper une session.
+
+Un voyage composé sans compte reste accessible par son identifiant, ce qui
+permet de l'essayer avant de s'inscrire ; il devient privé dès qu'il est
+rattaché à un compte.
 
 ## Structure
 
 ```
 app/
-  layout.js            Racine : polices, provider d'état, toasts, modales
-  page.js              Accueil
-  parcours/page.js     Parcours en 8 étapes
-  voyage/page.js       Application à onglets
-  api/chat/route.js    Route Handler de l'assistant
-  globals.css          Design system complet (tokens, écrans, responsive)
-components/
-  Navbar, Stage, Composer, Gallery, JourneyMap, Footer, CookieBar,
-  Onboarding, Generating, Ring, Reveal, Wordmark, Toasts, ModalHost
-components/trip/
-  TripApp, Chrome, Dashboard, Itinerary, Flights, Stays, Rentals,
-  Restaurants, Weather, Budget, Checklist, Packing, Assistant
+  api/auth        inscription, connexion, session
+  api/trips       création, lecture, liste
+  api/trips/[id]/generate   les trois phases
+  api/weather     Open-Meteo
+  api/chat        assistant, relais Anthropic
+  voyage/[id]     un voyage composé
+  parcours        le questionnaire
+  compte          inscription et connexion
+  mes-voyages     la bibliothèque
 lib/
-  data.js              Fixtures (aucun accès au DOM, importables partout)
-  store.jsx            Contexte React : état du voyage + actions
-  icons.jsx            Jeu d'icônes + <Icon> et <Chip>
-public/assets/         Vidéo, logo (3 déclinaisons), photos d'ambiance
+  claude.js       génération (Opus 5 + recherche web + sortie contrainte)
+  trip-schema.js  la forme d'un voyage
+  db.js           Postgres en production, SQLite en développement
+  auth.js         mots de passe et sessions
+  weather.js      Open-Meteo
+  places.js       recherche mondiale d'aéroports et de destinations
+scripts/
+  build-airports.js   régénère public/data/airports.json depuis OurAirports
 ```
 
-## Ce que le passage à React a apporté
+## Coût
 
-- **La saisie ne peut plus casser.** Les champs de la barre de recherche sont contrôlés ;
-  l'ancienne version régénérait le DOM à chaque clic et détruisait le champ en cours de
-  frappe.
-- **Un seul état partagé** (`lib/store.jsx`) : plan B météo, détecteur de regrets, jauge
-  de préparation, cases cochées, scénario. Les corrections de regrets modifient réellement
-  l'itinéraire, comme avant.
-- **Le rendu HTML est fait au build** pour les trois pages : premier affichage immédiat,
-  bon pour le référencement.
-- **La clé API ne quitte jamais le serveur** grâce au Route Handler.
-
-## L'assistant
-
-`components/trip/Assistant.jsx` appelle `/api/chat`. En cas d'échec (pas de clé, réseau
-coupé), il répond avec des réponses préparées choisies par mots-clés — jamais d'écran
-vide. Le prompt système décrit tout le voyage et impose le vouvoiement ainsi que les
-règles de curation.
-
-## Options
-
-**Auto-héberger les polices** (recommandé en production, supprime la requête vers Google) :
-
-```js
-// app/layout.js
-import { Sora, DM_Sans } from "next/font/google";
-const sora = Sora({ subsets: ["latin"], weight: ["200","300","400","500","600","700"], variable: "--font-sora" });
-const dm = DM_Sans({ subsets: ["latin"], weight: ["300","400","500","600","700"], variable: "--font-dm" });
-// <html className={`${sora.variable} ${dm.variable}`}> puis dans globals.css :
-// --sora: var(--font-sora), sans-serif;  --dm: var(--font-dm), system-ui, sans-serif;
-```
-
-**Persister l'état** : le store est volontairement en mémoire. Pour survivre au
-rechargement, brancher `localStorage` dans `OdysseaProvider` ou une base côté serveur.
-
-## À renseigner avant une mise en ligne
-
-- Hébergeur et adresse du DPO dans `LEGAL` (`lib/data.js`).
-- Les données de voyage sont des fixtures : à remplacer par vos sources réelles.
-- Les photos d'ambiance sont issues de la maquette.
+Une composition complète appelle le modèle une fois pour le plan, une fois par
+lot de quatre journées, une fois pour le pratique — avec recherche web à chaque
+fois. Comptez quelques dizaines de centimes par voyage selon sa durée. Le modèle
+se change par `ODYSSEA_MODEL`.

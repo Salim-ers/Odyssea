@@ -3,8 +3,12 @@ import { useOdyssea } from "../lib/store";
 import { CookiePrefs } from "./Footer";
 
 export default function CookieBar() {
-  const { S, actions, setModal } = useOdyssea();
-  if (S.cookies.set) return null;
+  const { cookiePrefs, setCookiePrefs, setModal, toast } = useOdyssea();
+  if (cookiePrefs.set) return null;
+  const decide = (all) => {
+    setCookiePrefs({ set: true, audience: all, perso: all });
+    toast(all ? "Merci — mesure d'audience activée." : "Refusé — seuls les cookies nécessaires restent actifs.");
+  };
   return (
     <div className="cookiebar" role="dialog" aria-label="Gestion des cookies">
       <p>
@@ -14,8 +18,8 @@ export default function CookieBar() {
       </p>
       <div className="acts">
         <button className="btn btn-quiet small" onClick={() => setModal(<CookiePrefs />)}>Personnaliser</button>
-        <button className="btn btn-line small" onClick={() => actions.cookies(false)}>Refuser</button>
-        <button className="btn btn-gold small" onClick={() => actions.cookies(true)}>Tout accepter</button>
+        <button className="btn btn-line small" onClick={() => decide(false)}>Refuser</button>
+        <button className="btn btn-gold small" onClick={() => decide(true)}>Tout accepter</button>
       </div>
     </div>
   );

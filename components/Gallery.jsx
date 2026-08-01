@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { GALS } from "../lib/data";
+import { GALS } from "../lib/destinations";
 import { useOdyssea } from "../lib/store";
 
 /* Glissement lent, rotation automatique suspendue au survol.

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AIRPORTS, DEST_SUGG } from "../lib/data";
+import { AIRPORTS, DEST_SUGG } from "../lib/suggest";
 import { loadPlaces, peekPlaces, search, norm } from "../lib/places";
 import { useOdyssea, frDate } from "../lib/store";
 import { Icon } from "../lib/icons";
@@ -29,8 +29,7 @@ const nightsBetween = (dep, ret) => {
 const plural = (n, one, many = one + "s") => `${n} ${n > 1 ? many : one}`;
 
 export default function Composer() {
-  const { S, patchOb, toast } = useOdyssea();
-  const o = S.ob;
+  const { ob: o, patchOb, toast } = useOdyssea();
   const [open, setOpen] = useState(null);
   const [flex, setFlex] = useState(FLEX[0]);
   const [cursor, setCursor] = useState(0);

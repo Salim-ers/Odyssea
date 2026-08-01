@@ -1,15 +1,14 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { OB_STEPS, OB_HINTS, STYLE_CARDS } from "../lib/data";
+import { OB_STEPS, OB_HINTS, STYLE_CARDS } from "../lib/onboarding";
 import { useOdyssea, frDate } from "../lib/store";
 import { Icon, PLANE } from "../lib/icons";
 import Wordmark from "./Wordmark";
 import Generating from "./Generating";
 
 export default function Onboarding() {
-  const { S, patchOb, patch } = useOdyssea();
-  const o = S.ob;
+  const { ob: o, patchOb, toast } = useOdyssea();
   const [gen, setGen] = useState(false);
   const router = useRouter();
   const pct = Math.round((o.step / (OB_STEPS - 1)) * 100);
@@ -39,7 +38,37 @@ export default function Onboarding() {
     return { adults, kids, trav: adults + kids };
   });
 
-  if (gen) return <Generating onDone={() => { patch(() => ({ started: true })); router.push("/voyage"); }} />;
+  /* On crée le voyage côté serveur, puis l'écran de génération enchaîne les
+     phases. Le brief part tel qu'il a été composé, sans transformation. */
+  const compose = async () => {
+    if (sending) return;
+    if (!o.dest.trim()) { toast("Indiquez d'abord une destination."); return patchOb(() => ({ step: 0 })); }
+    setSending(true);
+    try {
+      const res = await fetch("/api/trips", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(o),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast(data.error || "Impossible de lancer la composition."); return; }
+      setGen({ id: data.id, totalDays: data.totalDays });
+    } catch (e) {
+      toast("Connexion impossible : " + e.message);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (gen)
+    return (
+      <Generating
+        tripId={gen.id}
+        totalDays={gen.totalDays}
+        onDone={() => router.push(`/voyage/${gen.id}`)}
+        onError={(m) => { toast(m); setGen(null); }}
+      />
+    );
 
   const steps = [
     <div key="0">
@@ -221,7 +250,7 @@ export default function Onboarding() {
             : <button className="btn btn-quiet" onClick={() => router.push("/")}>Annuler</button>}
           {o.step < OB_STEPS - 1
             ? <button className="btn btn-gold" onClick={() => go(1)}>Continuer →</button>
-            : <button className="btn btn-gold" onClick={() => setGen(true)}><Icon name="spark" />Générer mon voyage</button>}
+            : <button className="btn btn-gold" onClick={compose} disabled={sending}><Icon name="spark" />{sending ? "Lancement…" : "Composer mon voyage"}</button>}
         </div>
         <p className="ob-note">
           Les questions secondaires (mobilité, enfants, escales…) arrivent plus tard, au bon moment — jamais toutes d&apos;un coup.

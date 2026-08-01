@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { LEGAL, ENTITY } from "../lib/data";
+import { LEGAL, ENTITY } from "../lib/legal";
 import { useOdyssea } from "../lib/store";
 
 export default function Footer() {
@@ -54,8 +54,8 @@ export default function Footer() {
             <ul>
               <li><Link href="/parcours">Composer un voyage</Link></li>
               <li><a href="#galerie">Explorer les destinations</a></li>
-              <li><a href="#methode">Exemple : Malaisie</a></li>
-              <li><Link href="/voyage">Mon voyage</Link></li>
+              <li><a href="#methode">Un voyage composé</a></li>
+              <li><Link href="/mes-voyages">Mes voyages</Link></li>
             </ul>
           </div>
           <div>
@@ -93,8 +93,8 @@ export default function Footer() {
 }
 
 export function CookiePrefs() {
-  const { S, patch, setModal, actions } = useOdyssea();
-  const t = (k) => patch((s) => ({ cookies: { ...s.cookies, [k]: !s.cookies[k] } }));
+  const { cookiePrefs, setCookiePrefs, setModal, toast } = useOdyssea();
+  const t = (k) => setCookiePrefs((c) => ({ ...c, [k]: !c[k] }));
   return (
     <>
       <div className="kicker steel">Confidentialité</div>
@@ -108,14 +108,14 @@ export function CookiePrefs() {
       </div>
       <div className="ck-toggle">
         <div><b>Mesure d&apos;audience</b><span>Statistiques anonymes de fréquentation, pour savoir quels écrans améliorer.</span></div>
-        <button className={"switch" + (S.cookies.audience ? " on" : "")} aria-pressed={S.cookies.audience} onClick={() => t("audience")} />
+        <button className={"switch" + (cookiePrefs.audience ? " on" : "")} aria-pressed={cookiePrefs.audience} onClick={() => t("audience")} />
       </div>
       <div className="ck-toggle">
         <div><b>Personnalisation</b><span>Mémorise vos préférences de voyage pour vous les reproposer.</span></div>
-        <button className={"switch" + (S.cookies.perso ? " on" : "")} aria-pressed={S.cookies.perso} onClick={() => t("perso")} />
+        <button className={"switch" + (cookiePrefs.perso ? " on" : "")} aria-pressed={cookiePrefs.perso} onClick={() => t("perso")} />
       </div>
       <div style={{ marginTop: 18, display: "flex", gap: 9, justifyContent: "flex-end" }}>
-        <button className="btn btn-gold small" onClick={() => { actions.cookies(S.cookies.audience || S.cookies.perso); setModal(null); }}>
+        <button className="btn btn-gold small" onClick={() => { setCookiePrefs((c) => ({ ...c, set: true })); toast("Vos choix sont enregistrés."); setModal(null); }}>
           Enregistrer mes choix
         </button>
       </div>
