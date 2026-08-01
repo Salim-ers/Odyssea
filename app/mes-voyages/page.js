@@ -35,7 +35,8 @@ export default async function MesVoyagesPage() {
   return (
     <main className="app">
       <div className="app-bar">
-        <Wordmark />
+        <span className="onb-bar-side" />
+        <Wordmark mark />
         <div className="right">
           <span className="saved">{user.name}</span>
           <LogoutButton />

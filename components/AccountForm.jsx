@@ -52,7 +52,8 @@ export default function AccountForm({ claimTripId }) {
   return (
     <main className="onb">
       <div className="onb-bar">
-        <Wordmark />
+        <span className="onb-bar-side" />
+        <Wordmark mark />
         <Link className="btn btn-quiet small" href="/">
           Retour à l&apos;accueil
         </Link>

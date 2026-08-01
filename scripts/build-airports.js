@@ -25,7 +25,7 @@ const ix = (n) => head.indexOf(n);
 const I = {
   type: ix("type"), name: ix("name"), country: ix("iso_country"),
   city: ix("municipality"), sched: ix("scheduled_service"), iata: ix("iata_code"),
-  kw: ix("keywords"),
+  kw: ix("keywords"), lat: ix("latitude_deg"), lon: ix("longitude_deg"),
 };
 
 const RANK = { large_airport: 0, medium_airport: 1, small_airport: 2 };
@@ -81,7 +81,10 @@ for (let r = 1; r < rows.length; r++) {
   const nm = clean(row[I.name]);
   const tw = city(row[I.city]);
   const kw = keywords(row[I.kw], nm, tw, iata);
-  out.push(kw ? [iata, nm, tw, row[I.country], rank, kw] : [iata, nm, tw, row[I.country], rank]);
+  const la = Math.round(parseFloat(row[I.lat]) * 100) / 100;
+  const lo = Math.round(parseFloat(row[I.lon]) * 100) / 100;
+  /* Les coordonnées servent à situer le départ sur la carte du parcours. */
+  out.push([iata, nm, tw, row[I.country], rank, kw || "", la, lo]);
 }
 
 out.sort((a, b) => a[4] - b[4] || a[2].localeCompare(b[2]));

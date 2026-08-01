@@ -239,7 +239,8 @@ export default function Onboarding() {
   return (
     <div className="onb">
       <div className="onb-bar">
-        <Wordmark />
+        <span className="onb-bar-side" />
+        <Wordmark mark />
         <div className="onb-recap">
           <b>{o.dest || "Destination"}</b><span className="sep" />
           <span>{frDate(o.dep)} → {frDate(o.ret)}</span><span className="sep" />

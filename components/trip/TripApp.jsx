@@ -35,7 +35,8 @@ export default function TripApp({ trip }) {
   return (
     <div className="app">
       <div className="app-bar">
-        <Wordmark />
+        <span className="onb-bar-side" />
+        <Wordmark mark />
         <div className="right">
           {user ? (
             <Link className="btn btn-line small" href="/mes-voyages">
