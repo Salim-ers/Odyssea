@@ -20,6 +20,16 @@ function cleanBrief(raw) {
   };
   const date = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v)) ? String(v) : null);
 
+  /* L'adresse de départ n'est retenue que si ses coordonnées tiennent debout :
+     une origine sans position ne permettrait de tracer aucune route. */
+  const coords = (v) => {
+    const lat = Number(v?.lat);
+    const lon = Number(v?.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+    return { label: s(v.label, 160) || "Point de départ", lat, lon };
+  };
+
   const dep = date(raw.dep);
   const ret = date(raw.ret);
 
@@ -107,7 +117,18 @@ export async function POST(request) {
     return Response.json({ error: "Requête illisible." }, { status: 400 });
   }
 
-  const { brief, error } = cleanBrief(raw);
+  /* Une exception ici renverrait un 500 au corps vide, et le navigateur
+     n'aurait qu'une erreur d'analyse JSON à montrer — ce qui ne dit rien de
+     la cause. Toute sortie de cette route est du JSON, sans exception. */
+  let brief, error;
+  try {
+    ({ brief, error } = cleanBrief(raw));
+  } catch (e) {
+    return Response.json(
+      { error: "Le brief n'a pas pu être lu : " + (e?.message || String(e)) },
+      { status: 500 }
+    );
+  }
   if (error) return Response.json({ error }, { status: 400 });
 
   try {

@@ -45,8 +45,6 @@ function Outbound({ href, children }) {
   );
 }
 
-const stayNights = (s) => `${s.nights} nuit${s.nights > 1 ? "s" : ""}`;
-
 /* ---------- Aperçu ----------
 
    Ce qu'on doit comprendre en dix secondes, et rien d'autre : où, quand,

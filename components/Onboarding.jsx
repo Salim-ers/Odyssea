@@ -14,6 +14,7 @@ import {
 } from "../lib/onboarding";
 import { useOdyssea, frDate, splitOf, eur } from "../lib/store";
 import { findAddress, locate, reverse } from "../lib/geocode";
+import { postJson, readJson } from "../lib/fetch-json";
 import { Icon } from "../lib/icons";
 import Wordmark from "./Wordmark";
 import Generating from "./Generating";
@@ -41,7 +42,7 @@ export default function Onboarding() {
     if (!resume) return;
     let alive = true;
     fetch(`/api/trips/${resume}`)
-      .then((r) => r.json())
+      .then(readJson)
       .then((d) => {
         if (!alive) return;
         if (!d.trip) return toast(d.error || "Ce voyage est introuvable.");
@@ -139,12 +140,7 @@ export default function Onboarding() {
     }
     setSending(true);
     try {
-      const res = await fetch("/api/trips", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(o),
-      });
-      const data = await res.json();
+      const { res, data } = await postJson("/api/trips", o);
       if (!res.ok) return toast(data.error || "Impossible de lancer la composition.");
       setGen({ id: data.id, totalDays: data.totalDays });
     } catch (e) {

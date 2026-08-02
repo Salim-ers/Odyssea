@@ -30,6 +30,10 @@ export default async function RootLayout({ children }) {
             import { Sora, DM_Sans } from "next/font/google" — voir README. */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* La règle vise le routeur « pages », où une police déclarée dans une
+            page ne se charge que pour elle. Ici le layout couvre toute
+            l'application : c'est la bonne place. */}
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           href="https://fonts.googleapis.com/css2?family=Sora:wght@200;300;400;500;600;700&family=DM+Sans:opsz,wght@9..40,300..700&family=Cormorant+Garamond:wght@300;400;500&display=swap"
           rel="stylesheet"

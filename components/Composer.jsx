@@ -70,7 +70,9 @@ export default function Composer() {
   }, [places, loadErr]);
 
   /* ---- Destination : suggestions maison à vide, monde entier à la frappe ---- */
-  const dests = o.dests || [];
+  /* Sans mémoïsation, ce tableau est neuf à chaque rendu et la liste des
+     suggestions se recalcule pour rien. */
+  const dests = useMemo(() => o.dests || [], [o.dests]);
   const q = destDraft.trim();
   const destList = useMemo(() => {
     const chosen = new Set(dests.map(norm));
