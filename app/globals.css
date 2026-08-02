@@ -1940,3 +1940,25 @@ body[data-composer="open"] .cookiebar{opacity:0;visibility:hidden;pointer-events
   border-top:1px solid rgba(9,24,45,.06);font-size:12.5px;color:var(--muted)}
 .vspent-l li b{margin-left:auto;font-weight:500;color:var(--ink)}
 .vspent-l li i{flex-basis:100%;font-style:normal;font-size:11px;color:var(--muted-2)}
+
+/* L'adresse de départ, une fois retenue. */
+.ob-origin{margin-top:26px;display:flex;align-items:center;gap:14px;padding:18px 22px;
+  border-radius:20px;border:1px solid rgba(224,129,60,.35);background:var(--white);
+  animation:riseIn .4s var(--ease) both}
+.ob-origin>svg{width:18px;height:18px;flex:none;color:var(--amber-deep)}
+.ob-origin span{flex:1;min-width:0}
+.ob-origin b{display:block;font-size:15.5px;color:var(--ink)}
+.ob-origin i{display:block;margin-top:2px;font-style:normal;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2)}
+.ob-origin>button{padding:8px 15px;border-radius:999px;border:1px solid rgba(9,24,45,.12);
+  font-size:12.5px;color:var(--muted);transition:all .25s}
+.ob-origin>button:hover{border-color:var(--amber);color:var(--amber-deep)}
+
+.ob-hits{margin-top:12px;list-style:none;display:flex;flex-direction:column;gap:6px;
+  max-height:260px;overflow-y:auto}
+.ob-hits button{width:100%;text-align:left;padding:11px 16px;border-radius:14px;
+  border:1px solid rgba(9,24,45,.08);background:var(--white);transition:all .2s}
+.ob-hits button:hover{border-color:var(--amber);background:var(--amber-soft)}
+.ob-hits b{display:block;font-size:14px;color:var(--ink);font-weight:500}
+.ob-hits i{display:block;margin-top:2px;font-style:normal;font-size:11.5px;color:var(--muted-2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

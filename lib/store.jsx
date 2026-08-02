@@ -30,6 +30,9 @@ const today = () => new Date();
 export const initialBrief = () => ({
   q: null,
   from: "Paris — CDG",
+  /* L adresse de depart, si elle est donnee : elle permet de tracer le
+     trajet depuis chez soi jusqu a l aeroport, puis jusqu a l hebergement. */
+  origin: null,
   /* Plusieurs destinations : un voyage peut enchaîner des escales, et le
      parcours répartit les nuits entre elles. */
   dests: [],

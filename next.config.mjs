@@ -13,7 +13,13 @@ const nextConfig = {
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          /* La géolocalisation était refusée à la page elle-même, ce qui
+             rendait « Ma position » inopérant sans le moindre message : le
+             navigateur bloque avant même de demander l'autorisation. On
+             l'autorise pour notre seule origine — le consentement reste
+             celui du navigateur, demandé au clic et jamais avant. Caméra et
+             micro restent fermés : rien ici n'en a l'usage. */
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self)" },
         ],
       },
     ];

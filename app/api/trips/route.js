@@ -58,6 +58,9 @@ function cleanBrief(raw) {
       /* Conservé pour l'affichage court : titres de page, listes, métadonnées. */
       dest: dests.join(" · "),
       from: s(raw.from, BRIEF_LIMITS.from) || "Paris — CDG",
+      /* Une origine sans coordonnées valides ne sert à rien : on la refuse
+         plutôt que de tracer une route depuis nulle part. */
+      origin: coords(raw.origin),
       dep,
       ret,
       split: imposed <= nights ? split : {},

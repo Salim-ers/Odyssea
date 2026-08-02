@@ -13,6 +13,7 @@ import {
   BUDGET_TIERS,
 } from "../lib/onboarding";
 import { useOdyssea, frDate, splitOf, eur } from "../lib/store";
+import { findAddress, locate, reverse } from "../lib/geocode";
 import { Icon } from "../lib/icons";
 import Wordmark from "./Wordmark";
 import Generating from "./Generating";
@@ -233,6 +234,7 @@ export default function Onboarding() {
         )}
       </>
     ),
+    origin: <OriginQuestion ob={o} patchOb={patchOb} toast={toast} />,
     split: <SplitQuestion ob={o} patchOb={patchOb} />,
     style: (
       <>
@@ -476,6 +478,105 @@ function DestQuestion({ dests, add, drop }) {
             onClick={() => (dests.includes(d) ? drop(d) : add(d))}>{d}</button>
         ))}
       </div>
+    </>
+  );
+}
+
+/* L'adresse de départ.
+
+   Elle sert à tracer la route depuis chez soi : le trajet jusqu'à l'aéroport,
+   puis le vol, puis l'arrivée jusqu'à l'hébergement. Sans elle, l'itinéraire
+   commence à l'aéroport, ce qui est rarement là où commence un voyage.
+
+   Elle reste facultative, et rien ne quitte le navigateur tant qu'elle n'est
+   pas retenue : la recherche interroge OpenStreetMap directement. */
+function OriginQuestion({ ob, patchOb, toast }) {
+  const [draft, setDraft] = useState("");
+  const [hits, setHits] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const chosen = ob.origin;
+
+  useEffect(() => {
+    const q = draft.trim();
+    if (q.length < 4) return setHits([]);
+    const ctrl = new AbortController();
+    /* Nominatim tolère une requête par seconde : on attend la fin de la frappe. */
+    const timer = setTimeout(() => {
+      findAddress(q, { signal: ctrl.signal }).then(setHits).catch(() => {});
+    }, 700);
+    return () => {
+      ctrl.abort();
+      clearTimeout(timer);
+    };
+  }, [draft]);
+
+  const take = (hit) => {
+    patchOb(() => ({ origin: { label: hit.label, lat: hit.lat, lon: hit.lon } }));
+    setDraft("");
+    setHits([]);
+  };
+
+  const here = async () => {
+    setBusy(true);
+    try {
+      const pos = await locate();
+      take(await reverse(pos.lat, pos.lon));
+    } catch (e) {
+      toast(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <h2 className="ob-q">D&apos;où partez-vous&nbsp;?</h2>
+      <p className="ob-sub">
+        Votre adresse permet de tracer la route entière : le trajet jusqu&apos;à l&apos;aéroport,
+        le vol, puis l&apos;arrivée jusqu&apos;à votre hébergement. Vous pouvez passer —
+        l&apos;itinéraire commencera alors à l&apos;aéroport.
+      </p>
+
+      {chosen ? (
+        <div className="ob-origin">
+          <Icon name="map" />
+          <span>
+            <b>{chosen.label}</b>
+            <i>Point de départ retenu</i>
+          </span>
+          <button type="button" onClick={() => patchOb(() => ({ origin: null }))}>
+            Changer
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="ob-addrow">
+            <input className="ob-input" value={draft} aria-label="Votre adresse"
+              placeholder="12 rue de la Paix, Paris"
+              onChange={(e) => setDraft(e.target.value)} />
+            <button type="button" className="btn btn-line" onClick={here} disabled={busy}>
+              <Icon name="compass" />
+              {busy ? "Localisation…" : "Ma position"}
+            </button>
+          </div>
+          {hits.length > 0 && (
+            <ul className="ob-hits">
+              {hits.map((h) => (
+                <li key={h.full}>
+                  <button type="button" onClick={() => take(h)}>
+                    <b>{h.label}</b>
+                    <i>{h.full}</i>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="ob-sub mid" style={{ marginTop: 18 }}>
+            Recherche effectuée par OpenStreetMap. Rien n&apos;est enregistré tant que vous
+            n&apos;avez pas retenu une adresse.
+          </p>
+        </>
+      )}
     </>
   );
 }

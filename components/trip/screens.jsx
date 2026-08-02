@@ -114,6 +114,12 @@ export function Overview({ trip, setTab }) {
   const score = plan.season?.score ?? null;
   const cc = plan.destination?.countryCode || "";
 
+  /* Si le voyageur a donné son adresse, la carte part de chez lui : le trajet
+     jusqu au premier point est alors calculé comme les autres. */
+  const route = brief.origin
+    ? [{ ...brief.origin, name: brief.origin.label, region: "Point de départ" }, ...plan.stops]
+    : plan.stops;
+
   /* Les temps forts : les activités et visites du programme, sans les repas
      ni les transferts, dans l'ordre où on les vivra. */
   const highlights = days
@@ -158,7 +164,7 @@ export function Overview({ trip, setTab }) {
 
       <div className="vmap-row">
         <div className="map-wrap plain">
-          <LiveMap stops={plan.stops} active={stop} onSelect={setStop} height={430} />
+          <LiveMap stops={route} active={stop} onSelect={setStop} height={430} />
         </div>
 
         <div className="vside">
