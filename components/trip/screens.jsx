@@ -11,6 +11,7 @@
 
 import { useEffect, useState } from "react";
 import LiveMap from "../LiveMap";
+import Book from "../Book";
 import { Icon, Chip } from "../../lib/icons";
 import { kindOf, KINDS } from "../../lib/kinds";
 import { eur, frDate, frDateLong, nights } from "../../lib/store";
@@ -46,15 +47,84 @@ function Outbound({ href, children }) {
 
 const stayNights = (s) => `${s.nights} nuit${s.nights > 1 ? "s" : ""}`;
 
-/* ---------- Aperçu ---------- */
+/* ---------- Aperçu ----------
+
+   Ce qu'on doit comprendre en dix secondes, et rien d'autre : où, quand,
+   avec qui, pour combien, quel temps il fera, où l'on dort, comment on se
+   déplace, ce qu'on va faire, et ce qu'il reste à faire.
+
+   Tout le reste — les conseils, les sources, le détail des étapes — se
+   déplie. Le premier écran d'un voyage n'est pas un dossier : c'est une
+   réponse. */
+
+function Fact({ k, v, icon }) {
+  return (
+    <div className="fact">
+      {icon && <Icon name={icon} />}
+      <span>
+        <i>{k}</i>
+        <b>{v}</b>
+      </span>
+    </div>
+  );
+}
+
+/* La météo de l'aperçu : une moyenne, pas quatorze cartes. Le détail est
+   dans son propre onglet. */
+function WeatherGlance({ tripId }) {
+  const [w, setW] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/weather?trip=${tripId}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive) return;
+        const days = (d.stops || []).flatMap((s) => s.days || []);
+        const temps = days.map((x) => x.tmax).filter(Number.isFinite);
+        if (!temps.length) return;
+        const rainy = days.filter((x) => conditionOf(x.code).icon === "rain").length;
+        setW({
+          max: Math.round(temps.reduce((s, t) => s + t, 0) / temps.length),
+          rainy,
+          days: days.length,
+          forecast: days.some((x) => x.kind === "forecast"),
+        });
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [tripId]);
+
+  if (!w) return null;
+  return (
+    <Fact
+      icon={w.rainy > w.days / 3 ? "rain" : "sun"}
+      k={w.forecast ? "Météo prévue" : "Météo de saison"}
+      v={`${w.max}° en moyenne${w.rainy ? ` · ${w.rainy} jour${w.rainy > 1 ? "s" : ""} de pluie` : ""}`}
+    />
+  );
+}
 
 export function Overview({ trip, setTab }) {
-  const { plan, brief, days } = trip;
+  const { plan, brief, days, practical: prep } = trip;
   const [stop, setStop] = useState(plan.stops[0]?.name);
   const n = nights(brief.dep, brief.ret);
   const people = Math.max(1, brief.adults + brief.kids);
-  const perPerson = plan.budget?.totalEur ? Math.round(plan.budget.totalEur / people) : null;
   const score = plan.season?.score ?? null;
+  const cc = plan.destination?.countryCode || "";
+
+  /* Les temps forts : les activités et visites du programme, sans les repas
+     ni les transferts, dans l'ordre où on les vivra. */
+  const highlights = days
+    .flatMap((d) => d.items.map((it) => ({ ...it, day: d.n })))
+    .filter((it) => it.kind === "sight" || it.kind === "activity")
+    .slice(0, 6);
+
+  /* Ce qu'il reste à faire, pris là où c'est écrit. */
+  const next = (prep?.bookings || []).slice(0, 3);
+  const area = (plan.stays || []).find((s) => s.stopName === stop) || plan.stays?.[0];
+  const ground = (prep?.transport?.options || []).find((o) => o.recommended);
 
   return (
     <section className="screen">
@@ -64,55 +134,42 @@ export function Overview({ trip, setTab }) {
         </div>
         <h1>{plan.destination.tagline}</h1>
         <p>{plan.destination.summary}</p>
-
-        <div className="vfacts">
-          <div>
-            <span className="k">Dates</span>
-            <span className="v">{frDate(brief.dep)} → {frDate(brief.ret)}</span>
-          </div>
-          <div>
-            <span className="k">Parcours</span>
-            <span className="v">{plan.stops.map((s) => s.name).join(" · ")}</span>
-          </div>
-          <div>
-            <span className="k">Équipage</span>
-            <span className="v">
-              {brief.adults} adulte{brief.adults > 1 ? "s" : ""}
-              {brief.kids ? ` · ${brief.kids} enfant${brief.kids > 1 ? "s" : ""}` : ""}
-            </span>
-          </div>
-          {plan.budget?.totalEur ? (
-            <div>
-              <span className="k">Budget</span>
-              <span className="v">{eur(plan.budget.totalEur)}</span>
-            </div>
-          ) : null}
-        </div>
       </header>
+
+      {/* L'essentiel, d'un coup d'œil. */}
+      <div className="glance">
+        <Fact icon="clock" k="Dates" v={`${frDate(brief.dep)} → ${frDate(brief.ret)}`} />
+        <Fact
+          icon="users"
+          k="Voyageurs"
+          v={`${brief.adults} adulte${brief.adults > 1 ? "s" : ""}${brief.kids ? ` · ${brief.kids} enfant${brief.kids > 1 ? "s" : ""}` : ""}`}
+        />
+        {plan.budget?.totalEur ? (
+          <Fact
+            icon="wallet"
+            k="Budget estimé"
+            v={`${eur(plan.budget.totalEur)} · ${eur(Math.round(plan.budget.totalEur / people))} / pers.`}
+          />
+        ) : null}
+        <WeatherGlance tripId={trip.id} />
+        {area ? <Fact icon="bed" k="Hébergement" v={`${area.area}, ${area.stopName}`} /> : null}
+        {ground ? <Fact icon="car" k="Sur place" v={ground.mode} /> : null}
+      </div>
 
       <div className="vmap-row">
         <div className="map-wrap plain">
-          <LiveMap stops={plan.stops} active={stop} onSelect={setStop} height={480} />
-          <div className="map-legend">
-            <span>
-              {plan.stops.length} escale{plan.stops.length > 1 ? "s" : ""}
-            </span>
-            <span>
-              {days.length} journée{days.length > 1 ? "s" : ""} écrite{days.length > 1 ? "s" : ""}
-            </span>
-          </div>
+          <LiveMap stops={plan.stops} active={stop} onSelect={setStop} height={430} />
         </div>
 
         <div className="vside">
-          {/* La saison d'abord : c'est ce qui peut remettre les dates en cause. */}
           {score != null && (
             <div className="vseason">
               <div className="ring">
-                <svg width="86" height="86" viewBox="0 0 86 86">
-                  <circle cx="43" cy="43" r="36" className="bg" fill="none" strokeWidth="5" />
-                  <circle cx="43" cy="43" r="36" className="fg" fill="none" strokeWidth="5"
-                    strokeLinecap="round" strokeDasharray={2 * Math.PI * 36}
-                    strokeDashoffset={2 * Math.PI * 36 * (1 - score / 100)} />
+                <svg width="78" height="78" viewBox="0 0 78 78">
+                  <circle cx="39" cy="39" r="32" className="bg" fill="none" strokeWidth="5" />
+                  <circle cx="39" cy="39" r="32" className="fg" fill="none" strokeWidth="5"
+                    strokeLinecap="round" strokeDasharray={2 * Math.PI * 32}
+                    strokeDashoffset={2 * Math.PI * 32 * (1 - score / 100)} />
                 </svg>
                 <span>{score}</span>
               </div>
@@ -130,7 +187,7 @@ export function Overview({ trip, setTab }) {
                 onClick={() => setStop(s.name)}>
                 <b>{String(i + 1).padStart(2, "0")}</b>
                 {s.name}
-                <span>{stayNights(s)}</span>
+                <span>{s.nights} nuit{s.nights > 1 ? "s" : ""}</span>
               </button>
             ))}
           </div>
@@ -144,22 +201,73 @@ export function Overview({ trip, setTab }) {
                 <p>{s.why}</p>
               </article>
             ))}
-
-          <div className="vacts">
-            <button className="btn btn-gold" onClick={() => setTab("itin")}>
-              <Icon name="list" />
-              Voir l&apos;itinéraire
-            </button>
-            <button className="btn btn-line" onClick={() => setTab("pratique")}>
-              Le pratique
-            </button>
-          </div>
         </div>
       </div>
 
-      {plan.advice?.length ? (
+      {/* Les temps forts, pour se projeter. */}
+      {highlights.length ? (
         <div className="vsec">
-          <h2 className="vsec-t">Ce qu&apos;il faut savoir avant de partir</h2>
+          <div className="vsec-row">
+            <h2 className="vsec-t">Les temps forts</h2>
+            <button className="linkish" onClick={() => setTab("itin")}>
+              Voir les {days.length} journées →
+            </button>
+          </div>
+          <div className="hl">
+            {highlights.map((h, i) => (
+              <article className="hl-i" key={i}>
+                <span className="d mono">J{h.day}</span>
+                <b>{h.title}</b>
+                <i>{h.detail}</i>
+              </article>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Ce qu'il reste à faire — la seule section qui appelle une action. */}
+      {next.length ? (
+        <div className="vsec">
+          <div className="vsec-row">
+            <h2 className="vsec-t">Vos prochaines actions</h2>
+            <button className="linkish" onClick={() => setTab("preparer")}>
+              Tout préparer →
+            </button>
+          </div>
+          <div className="todo">
+            {next.map((b) => (
+              <article className="todo-i" key={b.label}>
+                <span className="w mono">{b.when}</span>
+                <b>{b.label}</b>
+                <p>{b.why}</p>
+                <Book
+                  kind={b.kind}
+                  country={cc}
+                  tripId={trip.id}
+                  slot={"apercu-" + b.kind}
+                  compact
+                  params={{
+                    place: b.place || plan.stops[0]?.name,
+                    query: b.label,
+                    country: plan.destination.country,
+                    from: brief.from,
+                    to: b.place || plan.stops[0]?.name,
+                    dep: brief.dep,
+                    ret: brief.ret,
+                    adults: brief.adults,
+                    kids: brief.kids,
+                  }}
+                />
+              </article>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Tout le reste se déplie : ce n'est pas ce qu'on vient chercher. */}
+      {plan.advice?.length ? (
+        <details className="vfold">
+          <summary>Ce qu&apos;il faut savoir avant de partir</summary>
           <div className="vgrid">
             {plan.advice.map((a) => (
               <article className="vcard" key={a.title}>
@@ -168,42 +276,33 @@ export function Overview({ trip, setTab }) {
               </article>
             ))}
           </div>
-        </div>
+        </details>
       ) : null}
 
       {plan.sources?.length ? (
-        <div className="vsources">
-          <div className="kicker steel">
+        <details className="vfold">
+          <summary>
             {plan.sources.length} source{plan.sources.length > 1 ? "s" : ""} consultée
             {plan.sources.length > 1 ? "s" : ""} pendant la composition
-          </div>
-          <ul>
+          </summary>
+          <ul className="vsrc">
             {plan.sources.map((s) => (
               <li key={s.url}>
                 <a href={s.url} target="_blank" rel="noopener noreferrer">{s.title}</a>
               </li>
             ))}
           </ul>
-        </div>
+        </details>
       ) : null}
 
-      {perPerson ? (
-        <p className="vnote">
-          Soit environ {eur(perPerson)} par personne. Les montants marqués « estimé » n&apos;ont pas été
-          relevés sur une page de réservation : vérifiez-les avant de vous engager.
-        </p>
-      ) : null}
-
-      {/* Ce que la composition de ce voyage a coûté en appels modèle. Relevé,
-          pas estimé : c'est la somme des `usage` renvoyés par l'API. */}
       {showCost() && trip.usage?.total ? (
-        <details className="vspent">
+        <details className="vfold">
           <summary>
-            <span>Composition de ce voyage</span>
+            Composition de ce voyage
             <b className="mono">{usd(trip.usage.total.costUsd)}</b>
           </summary>
-          <p className="mono">{usageSummary(trip.usage.total)}</p>
-          <ul>
+          <p className="mono vspent-t">{usageSummary(trip.usage.total)}</p>
+          <ul className="vspent-l">
             {Object.entries(trip.usage.phases || {}).map(([k, u]) => (
               <li key={k}>
                 <span>{PHASE_LABELS[k] || k}</span>
@@ -214,6 +313,11 @@ export function Overview({ trip, setTab }) {
           </ul>
         </details>
       ) : null}
+
+      <p className="vnote">
+        Les montants marqués « estimé » n&apos;ont pas été relevés sur une page de réservation.
+        Odyssea ne vend rien : les liens partenaires ouvrent le site du prestataire.
+      </p>
     </section>
   );
 }
@@ -545,109 +649,6 @@ export function Budget({ trip }) {
             {confirmed > 1 ? "nt" : ""} sur un prix public relevé.
           </p>
         </aside>
-      </div>
-    </Screen>
-  );
-}
-
-/* ---------- Pratique ---------- */
-
-export function Practical({ trip }) {
-  const p = trip.practical;
-  if (!p) {
-    return (
-      <Screen kicker="Pratique" title="Volet pratique en cours.">
-        <Empty>Il sera disponible dès la fin de la composition.</Empty>
-      </Screen>
-    );
-  }
-
-  return (
-    <Screen
-      kicker="Pratique"
-      title="Avant de partir, et sur place."
-      intro="Les démarches concernent un voyageur de nationalité française. Vérifiez toujours auprès de la source officielle avant de réserver."
-    >
-      {p.watchouts?.length ? (
-        <div className="vsec">
-          <h2 className="vsec-t">Ce qui coince dans cet itinéraire</h2>
-          <div className="vlist">
-            {p.watchouts.map((w) => (
-              <article className={"vwatch" + (w.severity === "fort" ? " hard" : "")} key={w.title}>
-                <span className="imp">Impact {w.severity}</span>
-                <b>{w.title}</b>
-                <p>{w.detail}</p>
-                <div className="fix">
-                  <span className="kicker steel">Correctif</span>
-                  {w.fix}
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {p.transport?.options?.length ? (
-        <div className="vsec">
-          <h2 className="vsec-t">Se déplacer sur place</h2>
-          <p className="vsec-p">{p.transport.verdict}</p>
-          <div className="vgrid">
-            {p.transport.options.map((o) => (
-              <article className={"vcard tall" + (o.recommended ? " best" : "")} key={o.mode}>
-                {o.recommended && <span className="best-tag">Conseillé</span>}
-                <h3>{o.mode}</h3>
-                <div className="vp mono">{o.priceEur ? `≈ ${eur(o.priceEur)}` : "—"}</div>
-                <ul className="prosl">
-                  <li className="pro"><Icon name="check" />{o.pros}</li>
-                  <li className="con"><Icon name="alert" />{o.cons}</li>
-                </ul>
-              </article>
-            ))}
-          </div>
-          {p.transport.warnings?.length ? (
-            <div className="vaside col">
-              {p.transport.warnings.map((w) => (
-                <p key={w.title}>
-                  <Icon name="alert" />
-                  <span><b>{w.title}</b> — {w.detail}</span>
-                </p>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      <div className="vsec vtwo">
-        <div>
-          <h2 className="vsec-t">Check-list avant le départ</h2>
-          {p.checklist?.map((g) => (
-            <article className="vcard" key={g.group}>
-              <div className="kicker steel">{g.group}</div>
-              <ul className="oklist">
-                {g.items.map((it) => (
-                  <li key={it}>
-                    <Icon name="check" />
-                    {it}
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
-        </div>
-        <div>
-          <h2 className="vsec-t">La valise</h2>
-          {p.packing?.map((g) => (
-            <article className="vcard" key={g.group}>
-              <div className="kicker steel">{g.group}</div>
-              {g.items.map((it) => (
-                <div className="packrow" key={it.label}>
-                  <span className="lbl">{it.label}</span>
-                  <span className="why">{it.why}</span>
-                </div>
-              ))}
-            </article>
-          ))}
-        </div>
       </div>
     </Screen>
   );

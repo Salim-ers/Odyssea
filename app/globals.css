@@ -1732,3 +1732,211 @@ body[data-composer="open"] .cookiebar{opacity:0;visibility:hidden;pointer-events
   .lm-pin{font-size:11.5px;padding:5px 11px}
   .lm-legs{padding:10px}
 }
+
+/* ============================ PRÉPARER MON VOYAGE ============================
+   Six étapes repliables, dans l'ordre où on les traite. On n'en ouvre qu'une :
+   préparer un voyage est une suite de décisions, pas un mur de texte. */
+
+.prep-top{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:22px}
+.prep-gauge{display:flex;align-items:center;gap:12px;min-width:230px;flex:1}
+.prep-gauge .rail{flex:1;height:6px;border-radius:6px;background:rgba(9,24,45,.09);overflow:hidden}
+.prep-gauge .fill{display:block;height:100%;width:calc(100% * var(--p));border-radius:6px;
+  background:linear-gradient(90deg,var(--teal-2),var(--amber));transition:width .5s var(--ease)}
+.prep-gauge b{font-size:12.5px;color:var(--ink);font-weight:500}
+.prep-hint{font-size:12.5px;color:var(--muted-2)}
+
+.prep{display:flex;flex-direction:column;gap:10px}
+.prep-step{border:1px solid rgba(9,24,45,.08);border-radius:20px;background:var(--white);
+  overflow:hidden;transition:border-color .3s,box-shadow .35s}
+.prep-step.open{border-color:rgba(224,129,60,.35);box-shadow:0 28px 66px -56px rgba(3,20,26,.6)}
+.prep-head{width:100%;display:flex;align-items:center;gap:16px;padding:18px 22px;text-align:left}
+.prep-head .n{font-size:10px;letter-spacing:.16em;color:var(--muted-2)}
+.prep-head .ic{flex:none;width:36px;height:36px;border-radius:12px;display:flex;
+  align-items:center;justify-content:center;background:var(--panel-2);color:var(--amber-deep)}
+.prep-head .ic svg{width:17px;height:17px}
+.prep-head .tt{flex:1;min-width:0}
+.prep-head .tt b{display:block;font-family:var(--sora);font-weight:500;font-size:16.5px;color:var(--ink)}
+.prep-head .tt i{display:block;margin-top:2px;font-style:normal;font-size:12.5px;color:var(--muted-2)}
+.prep-head .chev{font-size:20px;color:var(--muted-2);transition:transform .3s var(--ease)}
+.prep-step.open .prep-head .chev{transform:rotate(90deg)}
+.prep-step.open .prep-head .ic{background:var(--amber-soft)}
+.prep-body{padding:4px 22px 24px;animation:riseIn .4s var(--ease) both}
+
+.prep-lead{font-size:15px;line-height:1.65;color:var(--ink);max-width:680px}
+.prep-note{margin-top:10px;font-size:13px;line-height:1.6;color:var(--muted)}
+.prep-h{margin:22px 0 10px;font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--muted-2)}
+.prep-src{margin-top:18px;font-size:11.5px;line-height:1.7;color:var(--muted-2)}
+.prep-two{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+
+.prep-list{list-style:none;display:flex;flex-direction:column;gap:11px}
+.prep-list li{font-size:13.5px;line-height:1.6;color:var(--muted);
+  padding-left:14px;border-left:2px solid rgba(224,129,60,.3)}
+.prep-list li b{display:block;color:var(--ink);font-weight:500}
+.prep-list.plain li{padding-left:0;border-left:none}
+
+/* Ce qui se coche. */
+.tick{position:relative;display:flex;align-items:flex-start;gap:11px;padding:7px 0;cursor:pointer}
+.tick input{position:absolute;opacity:0;width:0;height:0}
+.tick .box{flex:none;width:20px;height:20px;margin-top:1px;border-radius:7px;
+  border:1.5px solid rgba(9,24,45,.18);display:flex;align-items:center;justify-content:center;
+  color:transparent;transition:all .2s}
+.tick .box svg{width:12px;height:12px}
+.tick:hover .box{border-color:var(--amber)}
+.tick.on .box{background:var(--teal-2);border-color:var(--teal-2);color:#fff}
+.tick .tx{font-size:14px;line-height:1.5;color:var(--ink);min-width:0}
+.tick.on .tx{color:var(--muted-2)}
+.tick .tx i{display:block;margin-top:2px;font-style:normal;font-size:12px;color:var(--muted-2)}
+.tick input:focus-visible+.box{outline:2px solid var(--amber-deep);outline-offset:2px}
+.ess{margin-left:8px;padding:2px 7px;border-radius:999px;font-style:normal;font-size:9.5px;
+  letter-spacing:.08em;text-transform:uppercase;background:var(--amber-soft);color:var(--amber-deep)}
+
+/* Étape 1 — documents */
+.prep-docs{margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.doc{position:relative;padding:16px 18px;border-radius:16px;border:1px solid rgba(9,24,45,.08);
+  background:var(--paper-2)}
+.doc.req{border-left:3px solid var(--coral)}
+.doc.reco{border-left:3px solid var(--amber)}
+.doc.maybe{border-left:3px solid rgba(9,24,45,.18)}
+.doc .lvl{position:absolute;top:14px;right:16px;font-family:var(--mono);font-size:9px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2)}
+.doc.req .lvl{color:var(--coral)}
+.doc p{margin-top:6px;font-size:13px;line-height:1.6;color:var(--muted)}
+.doc .meta{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;font-size:11.5px;color:var(--muted-2)}
+.doc .meta a{display:inline-flex;align-items:center;gap:5px;color:var(--link)}
+.doc .meta a svg{width:11px;height:11px}
+
+/* Étape 2 — vaccins et numéros */
+.prep-chips{display:flex;flex-direction:column;gap:9px}
+.vac{padding:12px 15px;border-radius:14px;background:var(--paper-2);border:1px solid rgba(9,24,45,.07)}
+.vac b{font-size:14px;color:var(--ink)}
+.vac i{margin-left:9px;font-style:normal;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2)}
+.vac.req i{color:var(--coral)}
+.vac em{display:block;margin-top:4px;font-style:normal;font-size:12.5px;color:var(--muted)}
+.prep-nums{display:flex;flex-wrap:wrap;gap:9px}
+.prep-nums .num{display:flex;flex-direction:column;gap:3px;padding:11px 17px;border-radius:14px;
+  background:var(--navy);color:var(--cream);transition:transform .25s var(--ease)}
+.prep-nums .num:hover{transform:translateY(-2px);color:var(--cream)}
+.prep-nums .num span{font-size:11px;color:rgba(252,251,248,.6)}
+.prep-nums .num b{font-size:16px;letter-spacing:.04em;color:var(--amber-hi)}
+
+/* Étape 3 — connexion */
+.prep-plug{margin-top:16px;display:flex;gap:14px;align-items:flex-start;padding:16px 18px;
+  border-radius:16px;background:var(--panel-2)}
+.prep-plug svg{width:17px;height:17px;flex:none;color:var(--amber-deep);margin-top:2px}
+.prep-plug b{font-size:14.5px;color:var(--ink)}
+.prep-plug i{display:block;margin-top:4px;font-style:normal;font-size:12.5px;color:var(--muted)}
+.prep-offers{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:11px}
+.offer{padding:16px 18px;border-radius:16px;border:1px solid rgba(9,24,45,.08);background:var(--paper-2)}
+.offer b{font-family:var(--sora);font-weight:500;font-size:15px;color:var(--ink)}
+.offer .plan{display:block;margin-top:2px;font-size:12.5px;color:var(--amber-deep)}
+.offer p{margin-top:8px;font-size:12.5px;line-height:1.55;color:var(--muted)}
+.offer .p{display:block;margin-top:10px;font-size:17px;color:var(--ink)}
+
+/* Étape 4 — argent */
+.prep-cur{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:14px 18px;
+  border-radius:16px;background:var(--panel-2);margin-bottom:6px}
+.prep-cur b{font-family:var(--sora);font-weight:500;font-size:17px;color:var(--ink)}
+.prep-cur span{font-size:11px;letter-spacing:.12em;color:var(--amber-deep)}
+.prep-cur i{font-style:normal;font-size:12.5px;color:var(--muted)}
+.prep-budget .seg{display:inline-flex;gap:3px;padding:3px;border-radius:999px;
+  border:1px solid rgba(9,24,45,.1);background:var(--white)}
+.prep-budget .seg button{padding:7px 15px;border-radius:999px;font-size:12.5px;color:var(--muted);
+  transition:all .2s}
+.prep-budget .seg button.on{background:var(--navy);color:var(--cream);font-weight:500}
+.prep-budget .figures{margin-top:14px;display:flex;gap:28px;flex-wrap:wrap}
+.prep-budget .figures b{display:block;font-family:var(--sora);font-weight:300;font-size:28px;
+  letter-spacing:-.02em;color:var(--ink)}
+.prep-budget .figures i{font-style:normal;font-size:12px;color:var(--muted-2)}
+
+/* Étape 5 — valise */
+.prep-filter{margin-bottom:14px}
+.prep-filter button{display:inline-flex;align-items:center;gap:8px;padding:8px 15px;border-radius:999px;
+  border:1px solid rgba(9,24,45,.12);font-size:12.5px;color:var(--muted);transition:all .25s}
+.prep-filter button svg{width:13px;height:13px}
+.prep-filter button.on{background:var(--amber-soft);border-color:var(--amber);color:var(--amber-deep)}
+.prep-pack{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px}
+.pack h3{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--muted-2);padding-bottom:8px;border-bottom:1px solid rgba(9,24,45,.08);margin-bottom:4px}
+
+/* Étape 6 — réservations */
+.prep-books{display:flex;flex-direction:column;gap:12px}
+.bk{position:relative;padding:16px 18px;border-radius:16px;border:1px solid rgba(9,24,45,.08);
+  background:var(--paper-2)}
+.bk .when{position:absolute;top:15px;right:18px;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--amber-deep)}
+.bk p{margin:4px 0 10px 31px;font-size:12.5px;line-height:1.55;color:var(--muted)}
+.bk .book{margin-left:31px;margin-top:0}
+
+/* Les sorties vers un partenaire. */
+.book{margin-top:12px}
+.book-l{display:block;margin-bottom:7px;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2)}
+.book-row{display:flex;flex-wrap:wrap;gap:7px}
+.book-a{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;
+  border:1px solid rgba(9,24,45,.12);background:var(--white);font-size:12.5px;color:var(--link);
+  transition:all .25s var(--ease)}
+.book-a svg{width:12px;height:12px;opacity:.6}
+.book-a:hover{border-color:var(--amber);background:var(--amber-soft);color:var(--amber-deep);
+  transform:translateY(-1px)}
+
+@media(max-width:760px){
+  .prep-two{grid-template-columns:1fr}
+  .prep-head{padding:15px 16px;gap:12px}
+  .prep-head .n{display:none}
+  .prep-body{padding:0 16px 20px}
+  .prep-budget .figures{gap:18px}
+  .bk p,.bk .book{margin-left:0}
+}
+
+/* ---------- Aperçu : l'essentiel d'abord ---------- */
+.glance{margin-top:26px;display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:11px}
+.fact{display:flex;align-items:flex-start;gap:12px;padding:15px 18px;border-radius:18px;
+  border:1px solid rgba(9,24,45,.08);background:var(--white)}
+.fact>svg{width:17px;height:17px;flex:none;margin-top:2px;color:var(--amber-deep)}
+.fact i{display:block;font-style:normal;font-family:var(--mono);font-size:9px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted-2)}
+.fact b{display:block;margin-top:4px;font-size:14.5px;font-weight:500;color:var(--ink);line-height:1.4}
+
+.vsec-row{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.linkish{font-size:13px;color:var(--link);transition:color .2s}
+.linkish:hover{color:var(--amber-deep)}
+
+.hl{margin-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:11px}
+.hl-i{padding:16px 18px;border-radius:18px;background:var(--white);border:1px solid rgba(9,24,45,.08);
+  transition:transform .3s var(--ease),border-color .3s}
+.hl-i:hover{transform:translateY(-3px);border-color:rgba(224,129,60,.35)}
+.hl-i .d{display:inline-block;padding:3px 9px;border-radius:999px;background:var(--navy);
+  color:var(--amber-hi);font-size:9.5px;letter-spacing:.1em}
+.hl-i b{display:block;margin-top:9px;font-family:var(--sora);font-weight:500;font-size:15px;color:var(--ink)}
+.hl-i i{display:block;margin-top:5px;font-style:normal;font-size:12.5px;line-height:1.55;color:var(--muted)}
+
+.todo{margin-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.todo-i{position:relative;padding:18px 20px;border-radius:18px;background:var(--white);
+  border:1px solid rgba(224,129,60,.28)}
+.todo-i .w{display:block;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber-deep)}
+.todo-i b{display:block;margin-top:7px;font-family:var(--sora);font-weight:500;font-size:15.5px;color:var(--ink)}
+.todo-i p{margin-top:6px;font-size:12.5px;line-height:1.55;color:var(--muted)}
+
+/* Ce qui se déplie : replié par défaut, parce que ce n'est pas ce qu'on vient
+   chercher en ouvrant son voyage. */
+.vfold{margin-top:14px;border:1px solid rgba(9,24,45,.08);border-radius:18px;background:var(--white)}
+.vfold summary{display:flex;align-items:baseline;gap:12px;padding:15px 20px;cursor:pointer;
+  font-size:14px;color:var(--ink);list-style:none}
+.vfold summary::-webkit-details-marker{display:none}
+.vfold summary::before{content:"›";color:var(--muted-2);font-size:17px;line-height:1;transition:transform .25s}
+.vfold[open] summary::before{transform:rotate(90deg)}
+.vfold summary b{margin-left:auto;font-weight:500;color:var(--amber-deep)}
+.vfold>.vgrid,.vfold>ul,.vfold>p{margin:0 20px 18px}
+.vfold>.vgrid{margin-top:0}
+.vsrc{list-style:none;display:flex;flex-wrap:wrap;gap:8px}
+.vsrc a{display:inline-block;padding:7px 14px;border-radius:999px;background:var(--panel-2);
+  font-size:12.5px;color:var(--link)}
+.vsrc a:hover{color:var(--amber-deep)}
+.vspent-t{font-size:11.5px;color:var(--muted-2)}
+.vspent-l{list-style:none;margin:0 20px 16px}
+.vspent-l li{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:9px 0;
+  border-top:1px solid rgba(9,24,45,.06);font-size:12.5px;color:var(--muted)}
+.vspent-l li b{margin-left:auto;font-weight:500;color:var(--ink)}
+.vspent-l li i{flex-basis:100%;font-style:normal;font-size:11px;color:var(--muted-2)}

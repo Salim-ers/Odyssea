@@ -3,7 +3,8 @@ import { useState } from "react";
 import Link from "next/link";
 import Wordmark from "../Wordmark";
 import Assistant from "./Assistant";
-import { Overview, Itinerary, Flights, Stays, Weather, Budget, Practical } from "./screens";
+import { Overview, Itinerary, Flights, Stays, Weather, Budget } from "./screens";
+import Prepare from "./Prepare";
 import { useOdyssea } from "../../lib/store";
 import { Icon } from "../../lib/icons";
 
@@ -14,7 +15,7 @@ const TABS = [
   ["hotels", "bed", "Hébergement"],
   ["meteo", "cloud", "Météo"],
   ["budget", "wallet", "Budget"],
-  ["pratique", "shield", "Pratique"],
+  ["preparer", "shield", "Préparer"],
 ];
 
 export default function TripApp({ trip }) {
@@ -29,7 +30,7 @@ export default function TripApp({ trip }) {
     hotels: <Stays trip={trip} />,
     meteo: <Weather trip={trip} />,
     budget: <Budget trip={trip} />,
-    pratique: <Practical trip={trip} />,
+    preparer: <Prepare trip={trip} />,
   };
 
   return (
