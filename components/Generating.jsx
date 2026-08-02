@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Wordmark from "./Wordmark";
 import ParcoursMap from "./ParcoursMap";
 import { Icon } from "../lib/icons";
-import { showCost, summary } from "../lib/usage";
 
 /* L'écran de composition.
 
@@ -64,7 +63,6 @@ export default function Generating({ tripId, totalDays, ob, onDone, onError }) {
   const [written, setWritten] = useState(0);
   const [doing, setDoing] = useState(null);
   const [note, setNote] = useState(null);
-  const [spent, setSpent] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [failure, setFailure] = useState(null);
   const [attempt, setAttempt] = useState(0);
@@ -124,7 +122,6 @@ export default function Generating({ tripId, totalDays, ob, onDone, onError }) {
             setValue((v) => Math.max(v, e.value));
             setDoing(null);
             if (e.written != null) setWritten(e.written);
-            if (e.usage) setSpent(e.usage);
             if (e.degraded?.length) {
               setNote("Certaines options avancées du modèle ne sont pas disponibles — la composition continue.");
             }
@@ -169,7 +166,10 @@ export default function Generating({ tripId, totalDays, ob, onDone, onError }) {
     setAttempt((n) => n + 1);
   }, []);
 
-  const active = PHASES.findIndex((p) => p.key === phase);
+  /* Les deux passes de la préparation forment une seule étape à l écran :
+     l utilisateur n a pas à savoir comment elle est découpée. */
+  const shown = phase === "prepA" || phase === "prepB" ? "practical" : phase;
+  const active = PHASES.findIndex((p) => p.key === shown);
   const pct = Math.round(value * 100);
   const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
   const ss = String(elapsed % 60).padStart(2, "0");
@@ -263,12 +263,7 @@ export default function Generating({ tripId, totalDays, ob, onDone, onError }) {
 
         <ParcoursMap ob={ob} step={7 + Math.round(value * 3)} total={11} />
 
-        {showCost() && spent && <p className="gen-spent mono">{summary(spent)}</p>}
         {note && <p className="gen-note">{note}</p>}
-        <p className="gen-note">
-          Chaque prix non relevé sur une page sera annoncé comme une estimation. Rien n&apos;est inventé
-          de mémoire.
-        </p>
       </div>
     </div>
   );

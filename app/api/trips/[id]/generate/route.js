@@ -24,7 +24,9 @@ import {
 import {
   generatePlan,
   generateDays,
-  generatePractical,
+  generatePrepA,
+  generatePrepB,
+  prepComplete,
   isConfigured,
   explain,
   isRetryable,
@@ -42,7 +44,9 @@ const BATCH = PROFILE.batch;
 /* Poids de chaque phase dans l'avancement total. Les journées pèsent le plus
    parce qu'elles prennent le plus de temps — c'est ce que l'utilisateur
    attend, pas une répartition symbolique. */
-const WEIGHT = { plan: 0.24, days: 0.56, practical: 0.2 };
+/* La préparation compte pour deux passes : chacune a son poids, sinon
+   l'avancement resterait figé pendant la seconde moitié. */
+const WEIGHT = { plan: 0.22, days: 0.52, prepA: 0.13, prepB: 0.13 };
 
 const clamp = (n) => Math.max(0, Math.min(1, n));
 
@@ -102,6 +106,13 @@ export async function POST(_request, { params }) {
         let from = 1;
         while (from <= total && written.has(from)) from++;
 
+        /* Rien à écrire : reprendre un voyage déjà complet relancerait la
+           dernière passe et la facturerait pour rien. */
+        if (trip.plan && from > total && prepComplete(trip.practical)) {
+          send({ t: "done", value: 1 });
+          return finish();
+        }
+
         const batches = Math.ceil(total / BATCH);
         const batchIndex = Math.min(batches - 1, Math.floor((from - 1) / BATCH));
 
@@ -111,9 +122,18 @@ export async function POST(_request, { params }) {
           ? 0
           : from <= total
             ? WEIGHT.plan + (batchIndex / batches) * WEIGHT.days
-            : WEIGHT.plan + WEIGHT.days;
+            : !trip.practical?.formalities
+              ? WEIGHT.plan + WEIGHT.days
+              : WEIGHT.plan + WEIGHT.days + WEIGHT.prepA;
 
-        const phase = !trip.plan ? "plan" : from <= total ? "days" : "practical";
+        const prep = trip.practical || null;
+        const phase = !trip.plan
+          ? "plan"
+          : from <= total
+            ? "days"
+            : !prep?.formalities
+              ? "prepA"
+              : "prepB";
         const span = WEIGHT[phase] * (phase === "days" ? 1 / batches : 1);
 
         send({ t: "phase", phase, base, span, written: trip.days.length, total });
@@ -121,7 +141,10 @@ export async function POST(_request, { params }) {
         /* Le flux du modèle nourrit l'avancement en direct. */
         let searches = 0;
         let output = 0;
-        const maxSearches = PROFILE.searches[phase];
+        const maxSearches =
+          phase === "prepA" || phase === "prepB"
+            ? PROFILE.searches.practical
+            : PROFILE.searches[phase];
         const expected =
           phase === "days"
             ? EXPECTED_OUTPUT.days * Math.min(BATCH, total - from + 1)
@@ -172,19 +195,24 @@ export async function POST(_request, { params }) {
             degraded,
             usage: spent?.total || null,
           });
-        } else if (!trip.practical) {
-          const { practical, degraded, usage } = await generatePractical(
+        } else {
+          /* Deux passes : la première conditionne le départ, la seconde le
+             prépare. Chacune tient dans une requête, ce qui n'était pas le
+             cas quand les six volets partaient ensemble. */
+          const write = phase === "prepA" ? generatePrepA : generatePrepB;
+          const { prep: part, degraded, usage } = await write(
             trip.brief,
             trip.plan,
             trip.days,
             onEvent
           );
-          const spent = foldUsage(trip.usage, "practical", usage);
-          await savePractical(params.id, practical, spent);
+          const spent = foldUsage(trip.usage, phase, usage);
+          const merged = { ...(trip.practical || {}), ...part };
+          await savePractical(params.id, part, spent, prepComplete(merged));
           send({
             t: "phase-done",
-            phase: "practical",
-            value: 1,
+            phase,
+            value: base + span,
             degraded,
             usage: spent?.total || null,
           });
@@ -193,7 +221,9 @@ export async function POST(_request, { params }) {
         /* Le voyage est-il complet ? On le relit plutôt que de le déduire :
            c'est la base qui fait foi, pas notre trace en mémoire. */
         const after = await getTrip(params.id).catch(() => null);
-        const complete = Boolean(after?.plan && after.days.length >= total && after.practical);
+        const complete = Boolean(
+          after?.plan && after.days.length >= total && prepComplete(after.practical)
+        );
         send({ t: complete ? "done" : "continue", value: complete ? 1 : undefined });
         return finish();
       } catch (e) {
