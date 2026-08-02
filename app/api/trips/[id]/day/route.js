@@ -10,6 +10,7 @@
 import { currentUser } from "../../../../../lib/auth";
 import { getTrip, appendDays, dayCount, foldUsage } from "../../../../../lib/trips";
 import { generateDays, isConfigured, explain, isRetryable } from "../../../../../lib/claude";
+import { isFake, fakeDays, FAKE_USAGE } from "../../../../../lib/fake";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -18,7 +19,7 @@ export const dynamic = "force-dynamic";
 const MAX_REASON = 400;
 
 export async function POST(request, { params }) {
-  if (!isConfigured()) {
+  if (!isFake() && !isConfigured()) {
     return Response.json(
       { error: "Génération indisponible : ANTHROPIC_API_KEY n'est pas configurée." },
       { status: 503 }
@@ -53,14 +54,9 @@ export async function POST(request, { params }) {
   const reason = String(body?.reason || "").trim().slice(0, MAX_REASON);
 
   try {
-    const { days, usage } = await generateDays(
-      trip.brief,
-      trip.plan,
-      n,
-      n,
-      undefined,
-      reason || undefined
-    );
+    const { days, usage } = isFake()
+      ? { days: await fakeDays(trip.brief, trip.plan, n, n), usage: FAKE_USAGE }
+      : await generateDays(trip.brief, trip.plan, n, n, undefined, reason || undefined);
     const day = days.find((d) => d.n === n) || days[0];
     if (!day) return Response.json({ error: "Le modèle n'a rien renvoyé." }, { status: 502 });
 

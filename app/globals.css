@@ -2040,3 +2040,11 @@ body[data-composer="open"] .cookiebar{opacity:0;visibility:hidden;pointer-events
   .gen-live{grid-template-columns:1fr}
   .jlist{max-height:220px}
 }
+
+/* Un voyage de démonstration doit se voir au premier coup d'œil : rien ne
+   serait pire que de le prendre pour un vrai. */
+.demo-flag{display:flex;gap:13px;align-items:flex-start;margin-bottom:22px;padding:15px 18px;
+  border-radius:16px;border:1px dashed var(--amber);background:var(--amber-soft);
+  font-size:13px;line-height:1.6;color:var(--muted)}
+.demo-flag svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--amber-deep)}
+.demo-flag b{color:var(--ink)}

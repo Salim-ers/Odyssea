@@ -33,6 +33,7 @@ import {
   EXPECTED_OUTPUT,
 } from "../../../../../lib/claude";
 import { PROFILE } from "../../../../../lib/profile";
+import { isFake, fakePlan, fakeDays, fakePrepA, fakePrepB, FAKE_USAGE } from "../../../../../lib/fake";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -79,7 +80,8 @@ export async function POST(_request, { params }) {
       };
 
       try {
-        if (!isConfigured()) {
+        const demo = isFake();
+        if (!demo && !isConfigured()) {
           send({
             t: "error",
             message: "Génération indisponible : ANTHROPIC_API_KEY n'est pas configurée.",
@@ -162,7 +164,9 @@ export async function POST(_request, { params }) {
         };
 
         if (phase === "plan") {
-          const { plan, degraded, usage } = await generatePlan(trip.brief, onEvent);
+          const { plan, degraded, usage } = demo
+            ? { plan: await fakePlan(trip.brief, onEvent), degraded: [], usage: FAKE_USAGE }
+            : await generatePlan(trip.brief, onEvent);
           const spent = foldUsage(trip.usage, "plan", usage);
           await savePlan(params.id, plan, spent);
           send({
@@ -176,13 +180,9 @@ export async function POST(_request, { params }) {
           });
         } else if (phase === "days") {
           const to = Math.min(total, from + BATCH - 1);
-          const { days, degraded, usage } = await generateDays(
-            trip.brief,
-            trip.plan,
-            from,
-            to,
-            onEvent
-          );
+          const { days, degraded, usage } = demo
+            ? { days: await fakeDays(trip.brief, trip.plan, from, to, onEvent), degraded: [], usage: FAKE_USAGE }
+            : await generateDays(trip.brief, trip.plan, from, to, onEvent);
           const spent = foldUsage(trip.usage, "days", usage);
           const result = await appendDays(params.id, days, total, spent);
           send({
@@ -199,13 +199,22 @@ export async function POST(_request, { params }) {
           /* Deux passes : la première conditionne le départ, la seconde le
              prépare. Chacune tient dans une requête, ce qui n'était pas le
              cas quand les six volets partaient ensemble. */
-          const write = phase === "prepA" ? generatePrepA : generatePrepB;
-          const { prep: part, degraded, usage } = await write(
-            trip.brief,
-            trip.plan,
-            trip.days,
-            onEvent
-          );
+          const { prep: part, degraded, usage } = demo
+            ? {
+                prep: await (phase === "prepA" ? fakePrepA : fakePrepB)(
+                  trip.brief,
+                  trip.plan,
+                  onEvent
+                ),
+                degraded: [],
+                usage: FAKE_USAGE,
+              }
+            : await (phase === "prepA" ? generatePrepA : generatePrepB)(
+                trip.brief,
+                trip.plan,
+                trip.days,
+                onEvent
+              );
           const spent = foldUsage(trip.usage, phase, usage);
           const merged = { ...(trip.practical || {}), ...part };
           await savePractical(params.id, part, spent, prepComplete(merged));

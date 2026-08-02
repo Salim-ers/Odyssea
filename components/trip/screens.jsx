@@ -143,6 +143,17 @@ export function Overview({ trip, setTab }) {
 
   return (
     <section className="screen">
+      {plan.demo && (
+        <p className="demo-flag">
+          <Icon name="alert" />
+          <span>
+            <b>Voyage de démonstration.</b> Il a été fabriqué sans appeler le modèle, pour mettre
+            au point l’affichage sans consommer de crédits. Seules les coordonnées de la carte
+            sont réelles.
+          </span>
+        </p>
+      )}
+
       <header className="vhead">
         <div className="kicker gold">
           {plan.destination.country} · {n} nuit{n > 1 ? "s" : ""}

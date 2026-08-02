@@ -3,6 +3,7 @@
 import { currentUser } from "../../../lib/auth";
 import { createTrip, listTrips, dayCount } from "../../../lib/trips";
 import { isConfigured } from "../../../lib/claude";
+import { isFake } from "../../../lib/fake";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -104,7 +105,8 @@ function cleanBrief(raw) {
 }
 
 export async function POST(request) {
-  if (!isConfigured()) {
+  /* En démonstration, aucune clé n'est nécessaire : c'est tout l'intérêt. */
+  if (!isFake() && !isConfigured()) {
     return Response.json(
       { error: "Génération indisponible : ANTHROPIC_API_KEY n'est pas configurée." },
       { status: 503 }
