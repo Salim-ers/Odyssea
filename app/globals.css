@@ -1962,3 +1962,37 @@ body[data-composer="open"] .cookiebar{opacity:0;visibility:hidden;pointer-events
 .ob-hits b{display:block;font-size:14px;color:var(--ink);font-weight:500}
 .ob-hits i{display:block;margin-top:2px;font-style:normal;font-size:11.5px;color:var(--muted-2);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------- Une journée qui se coche, et se refait ---------- */
+.dayblock .dhead .ddone{margin-left:auto;font-size:11px;color:var(--muted-2)}
+.dayline .dtick{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;flex:none;background:var(--kc-soft,var(--panel-2));color:var(--kc);
+  border:1px solid transparent;transition:all .22s var(--ease)}
+.dayline .dtick svg{width:14px;height:14px}
+.dayline .dtick:hover{border-color:var(--kc);transform:scale(1.06)}
+.dayline .dtick.on{background:var(--teal-2);color:#fff;border-color:var(--teal-2)}
+/* Une étape faite s'efface sans disparaître : on doit pouvoir la relire. */
+.dayline.done .dtx b,.dayline.done .dsub{color:var(--muted-2)}
+.dayline.done .dtx b{text-decoration:line-through;text-decoration-thickness:1px}
+.dayline.done .why,.dayline.done .dmeta{opacity:.55}
+
+.redo-open{margin-top:18px;display:inline-flex;align-items:center;gap:8px;padding:9px 16px;
+  border-radius:999px;border:1px dashed rgba(9,24,45,.18);font-size:12.5px;color:var(--muted);
+  transition:all .25s var(--ease)}
+.redo-open svg{width:13px;height:13px}
+.redo-open:hover{border-color:var(--amber);border-style:solid;color:var(--amber-deep);
+  background:var(--amber-soft)}
+
+.redo{margin-top:18px;padding:18px 20px;border-radius:18px;border:1px solid rgba(224,129,60,.35);
+  background:linear-gradient(180deg,rgba(224,129,60,.06),var(--white));
+  animation:riseIn .35s var(--ease) both}
+.redo label{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted-2);margin-bottom:8px}
+.redo textarea{width:100%;resize:vertical;background:var(--white);border:1px solid rgba(9,24,45,.14);
+  border-radius:14px;padding:12px 15px;font:inherit;font-size:14px;color:var(--ink);outline:none;
+  transition:border-color .25s,box-shadow .25s}
+.redo textarea:focus{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-soft)}
+.redo textarea:disabled{opacity:.6}
+.redo-acts{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
+.redo-err{margin-top:10px;font-size:12.5px;color:var(--coral)}
+.redo-note{margin-top:10px;font-size:11.5px;color:var(--muted-2)}

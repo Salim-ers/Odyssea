@@ -9,13 +9,14 @@
    Tout ce qui s'affiche ici vient de la génération : aucune donnée n'est
    écrite en dur, et ce qui manque se dit plutôt que de se combler. */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import LiveMap from "../LiveMap";
 import Book from "../Book";
+import { postJson } from "../../lib/fetch-json";
 import { Icon, Chip } from "../../lib/icons";
 import { kindOf, KINDS } from "../../lib/kinds";
 import { eur, frDate, frDateLong, nights } from "../../lib/store";
-import { showCost, usd, summary as usageSummary, detail as usageDetail, PHASE_LABELS } from "../../lib/usage";
 
 export function Screen({ kicker, title, intro, children }) {
   return (
@@ -44,6 +45,16 @@ function Outbound({ href, children }) {
     </a>
   );
 }
+
+/* La première phrase d'un détail : de quoi se projeter sans recopier
+   l'itinéraire. On coupe à la ponctuation, jamais au milieu d'un mot. */
+const first = (text) => {
+  const t = String(text || '').trim();
+  if (t.length <= 120) return t;
+  const cut = t.slice(0, 120);
+  const stop = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf(' ; '), cut.lastIndexOf(', '));
+  return (stop > 60 ? cut.slice(0, stop) : cut.slice(0, cut.lastIndexOf(' '))) + '…';
+};
 
 /* ---------- Aperçu ----------
 
@@ -128,7 +139,7 @@ export function Overview({ trip, setTab }) {
   /* Ce qu'il reste à faire, pris là où c'est écrit. */
   const next = (prep?.bookings || []).slice(0, 3);
   const area = (plan.stays || []).find((s) => s.stopName === stop) || plan.stays?.[0];
-  const ground = (prep?.transport?.options || []).find((o) => o.recommended);
+  const ground = prep?.transport?.mode || null;
 
   return (
     <section className="screen">
@@ -157,7 +168,7 @@ export function Overview({ trip, setTab }) {
         ) : null}
         <WeatherGlance tripId={trip.id} />
         {area ? <Fact icon="bed" k="Hébergement" v={`${area.area}, ${area.stopName}`} /> : null}
-        {ground ? <Fact icon="car" k="Sur place" v={ground.mode} /> : null}
+        {ground ? <Fact icon="car" k="Sur place" v={ground} /> : null}
       </div>
 
       <div className="vmap-row">
@@ -222,7 +233,7 @@ export function Overview({ trip, setTab }) {
               <article className="hl-i" key={i}>
                 <span className="d mono">J{h.day}</span>
                 <b>{h.title}</b>
-                <i>{h.detail}</i>
+                <i>{first(h.detail)}</i>
               </article>
             ))}
           </div>
@@ -268,68 +279,111 @@ export function Overview({ trip, setTab }) {
         </div>
       ) : null}
 
-      {/* Tout le reste se déplie : ce n'est pas ce qu'on vient chercher. */}
-      {plan.advice?.length ? (
-        <details className="vfold">
-          <summary>Ce qu&apos;il faut savoir avant de partir</summary>
-          <div className="vgrid">
-            {plan.advice.map((a) => (
-              <article className="vcard" key={a.title}>
-                <b>{a.title}</b>
-                <p>{a.detail}</p>
-              </article>
-            ))}
-          </div>
-        </details>
-      ) : null}
-
-      {plan.sources?.length ? (
-        <details className="vfold">
-          <summary>
-            {plan.sources.length} source{plan.sources.length > 1 ? "s" : ""} consultée
-            {plan.sources.length > 1 ? "s" : ""} pendant la composition
-          </summary>
-          <ul className="vsrc">
-            {plan.sources.map((s) => (
-              <li key={s.url}>
-                <a href={s.url} target="_blank" rel="noopener noreferrer">{s.title}</a>
-              </li>
-            ))}
-          </ul>
-        </details>
-      ) : null}
-
-      {showCost() && trip.usage?.total ? (
-        <details className="vfold">
-          <summary>
-            Composition de ce voyage
-            <b className="mono">{usd(trip.usage.total.costUsd)}</b>
-          </summary>
-          <p className="mono vspent-t">{usageSummary(trip.usage.total)}</p>
-          <ul className="vspent-l">
-            {Object.entries(trip.usage.phases || {}).map(([k, u]) => (
-              <li key={k}>
-                <span>{PHASE_LABELS[k] || k}</span>
-                <b className="mono">{usd(u.costUsd)}</b>
-                <i className="mono">{usageDetail(u)}</i>
-              </li>
-            ))}
-          </ul>
-        </details>
-      ) : null}
-
-      <p className="vnote">
-        Les montants marqués « estimé » n&apos;ont pas été relevés sur une page de réservation.
-        Odyssea ne vend rien : les liens partenaires ouvrent le site du prestataire.
-      </p>
     </section>
   );
 }
 
-/* ---------- Itinéraire ---------- */
+/* ---------- Itinéraire ----------
+
+   Une journée se coche, étape par étape : c'est ainsi qu'on la vit, pas en
+   la relisant en entier. Ce qui est fait reste su, par voyage, dans le
+   navigateur — sans compte, et sans que rien ne parte.
+
+   Et une journée qui ne convient pas se refait, seule. On donne au modèle la
+   raison du rejet ; il réécrit cette journée-là sans reprendre ce qu'il
+   avait proposé, et le reste du programme n'est pas touché. */
+
+function useDone(tripId) {
+  const key = `odyssea:fait:${tripId}`;
+  const [done, setDone] = useState(() => new Set());
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) setDone(new Set(JSON.parse(raw)));
+    } catch {
+      /* Stockage indisponible : la page marche, sans mémoire. */
+    }
+  }, [key]);
+
+  const toggle = useCallback(
+    (id) =>
+      setDone((prev) => {
+        const next = new Set(prev);
+        next.has(id) ? next.delete(id) : next.add(id);
+        try {
+          localStorage.setItem(key, JSON.stringify([...next]));
+        } catch {}
+        return next;
+      }),
+    [key]
+  );
+
+  return [done, toggle];
+}
+
+function Redo({ tripId, day, onDone }) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  const send = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const { res, data } = await postJson(`/api/trips/${tripId}/day`, { n: day, reason });
+      if (!res.ok) {
+        setError(data.error || "La journée n'a pas pu être refaite.");
+        return;
+      }
+      setOpen(false);
+      setReason("");
+      onDone();
+    } catch (e) {
+      setError("Connexion impossible : " + e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!open) {
+    return (
+      <button className="redo-open" onClick={() => setOpen(true)}>
+        <Icon name="spark" />
+        Cette journée ne me convient pas
+      </button>
+    );
+  }
+
+  return (
+    <div className="redo">
+      <label htmlFor={`redo-${day}`}>Qu&apos;est-ce qui ne va pas&nbsp;?</label>
+      <textarea id={`redo-${day}`} value={reason} rows={2} disabled={busy}
+        placeholder="Trop de marche, je préférerais la mer, commencer plus tard…"
+        onChange={(e) => setReason(e.target.value)} />
+      {error && <p className="redo-err">{error}</p>}
+      <div className="redo-acts">
+        <button className="btn btn-gold small" onClick={send} disabled={busy}>
+          <Icon name="spark" />
+          {busy ? "Réécriture…" : "Refaire cette journée"}
+        </button>
+        <button className="btn btn-quiet small" onClick={() => setOpen(false)} disabled={busy}>
+          Annuler
+        </button>
+      </div>
+      <p className="redo-note">
+        Seule cette journée est réécrite. Le reste du programme n&apos;est pas touché.
+      </p>
+    </div>
+  );
+}
 
 export function Itinerary({ trip, day, setDay }) {
+  const router = useRouter();
+  const [done, toggle] = useDone(trip.id);
   const d = trip.days.find((x) => x.n === day) || trip.days[0];
+
   if (!d) {
     return (
       <Screen kicker="Itinéraire" title="Aucune journée.">
@@ -346,11 +400,14 @@ export function Itinerary({ trip, day, setDay }) {
     else byStop.push({ name: x.stopName, days: [x] });
   }
 
+  const id = (i) => `${d.n}:${i}`;
+  const checked = d.items.filter((_, i) => done.has(id(i))).length;
+
   return (
     <Screen
       kicker="Itinéraire"
       title={`${trip.days.length} journées, heure par heure.`}
-      intro="Chaque étape est justifiée. Les horaires et les fermetures ont été vérifiés au moment de la composition — reconfirmez-les la veille."
+      intro="Cochez à mesure. Les horaires et les fermetures ont été vérifiés à la composition — reconfirmez-les la veille."
     >
       <div className="dayrail">
         {byStop.map((g) => (
@@ -383,16 +440,19 @@ export function Itinerary({ trip, day, setDay }) {
           <span className="dnum">Jour {d.n}</span>
           <h4>{d.title}</h4>
           <span className="ddate">{d.stopName} · {frDateLong(d.date)}</span>
+          <span className="ddone mono">{checked} / {d.items.length}</span>
         </header>
 
         {d.items.map((it, i) => {
           const kind = kindOf(it.kind);
+          const on = done.has(id(i));
           return (
-            <div className="dayline" key={i} style={{ "--kc": kind.c }}>
+            <div className={"dayline" + (on ? " done" : "")} key={i} style={{ "--kc": kind.c }}>
               <span className="t">{it.time}</span>
-              <span className="kmark" aria-hidden="true">
-                <Icon name={kind.icon} />
-              </span>
+              <button className={"dtick" + (on ? " on" : "")} onClick={() => toggle(id(i))}
+                aria-pressed={on} aria-label={on ? "Marquer comme à faire" : "Marquer comme fait"}>
+                <Icon name={on ? "check" : kind.icon} />
+              </button>
               <div className="dtx">
                 <b>{it.title}</b>
                 <span className="klabel">{kind.label}</span>
@@ -413,6 +473,8 @@ export function Itinerary({ trip, day, setDay }) {
             </div>
           );
         })}
+
+        <Redo tripId={trip.id} day={d.n} onDone={() => router.refresh()} />
       </article>
 
       <div className="daynav">

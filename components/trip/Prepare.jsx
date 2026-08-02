@@ -228,19 +228,6 @@ function Formalities({ prep, done, toggle }) {
         ))}
       </div>
 
-      {f.entry?.length ? (
-        <>
-          <h3 className="prep-h">Conditions d&apos;entrée</h3>
-          <ul className="prep-list">
-            {f.entry.map((e) => (
-              <li key={e.title}>
-                <b>{e.title}</b>
-                {e.detail}
-              </li>
-            ))}
-          </ul>
-        </>
-      ) : null}
 
       {f.sources?.length ? (
         <p className="prep-src">
@@ -366,21 +353,6 @@ function Connectivity({ prep, country, cc, tripId }) {
         </>
       ) : null}
 
-      {c.localSim?.length ? (
-        <>
-          <h3 className="prep-h">Carte SIM locale</h3>
-          <ul className="prep-list">
-            {c.localSim.map((s) => (
-              <li key={s.operator}>
-                <b>
-                  {s.operator} — {eur(s.priceEur)}
-                </b>
-                {s.where}. {s.detail}
-              </li>
-            ))}
-          </ul>
-        </>
-      ) : null}
     </>
   );
 }
