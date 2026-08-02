@@ -1665,13 +1665,6 @@ body[data-composer="open"] .cookiebar{opacity:0;visibility:hidden;pointer-events
   .splash-note::after{width:1.7em}
 }
 
-/* Ce que la composition fait à la seconde : la ligne la plus utile de
-   l'écran, parce qu'elle prouve que le travail avance. */
-.gen-doing{margin-top:12px;display:flex;align-items:center;gap:9px;min-height:20px;
-  font-size:12.5px;color:var(--muted-2);transition:color .3s}
-.gen-doing svg{width:14px;height:14px;flex:none;opacity:.75}
-.gen-doing.on{color:var(--amber-deep)}
-.gen-doing span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ============================ CARTE MANIPULABLE ============================
    Une vraie carte : rues, routes, frontières, quartiers, gares, aéroports,
@@ -1996,3 +1989,54 @@ body[data-composer="open"] .cookiebar{opacity:0;visibility:hidden;pointer-events
 .redo-acts{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
 .redo-err{margin-top:10px;font-size:12.5px;color:var(--coral)}
 .redo-note{margin-top:10px;font-size:11.5px;color:var(--muted-2)}
+
+/* ---------- L'attente, en deux colonnes ----------
+   À gauche ce qui se passe, à droite ce qui prend forme. La composition dure
+   une à trois minutes : l'écran doit valoir ce temps-là, et tout ce qu'il
+   montre est réel. */
+.gen-live{margin-top:26px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:clamp(20px,3vw,38px);align-items:start}
+.gen-col{display:flex;flex-direction:column;gap:16px;min-width:0}
+
+/* Le journal des recherches : il grandit, et chaque ligne est vraie. */
+.gen-journal{padding:18px 20px;border-radius:20px;border:1px solid rgba(9,24,45,.08);
+  background:var(--white);min-height:210px}
+.gen-journal .jh{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  padding-bottom:10px;border-bottom:1px solid rgba(9,24,45,.07)}
+.gen-journal .jh b{font-size:12px;color:var(--amber-deep)}
+.jnow{display:flex;align-items:flex-start;gap:10px;padding:12px 0 10px;font-size:13.5px;
+  line-height:1.5;color:var(--ink);animation:riseIn .35s var(--ease) both}
+.jnow .dot{flex:none;width:7px;height:7px;margin-top:6px;border-radius:50%;background:var(--amber);
+  animation:breathe 1.6s ease-in-out infinite}
+.jlist{list-style:none;display:flex;flex-direction:column;max-height:290px;overflow-y:auto;
+  scrollbar-width:thin;scrollbar-color:rgba(9,24,45,.16) transparent}
+.jlist li{display:flex;align-items:flex-start;gap:10px;padding:9px 0;font-size:12.5px;
+  line-height:1.5;color:var(--muted-2);border-top:1px solid rgba(9,24,45,.05);
+  animation:riseIn .4s var(--ease) both}
+.jlist li svg{flex:none;width:12px;height:12px;margin-top:3px;color:var(--teal-2)}
+.jempty{padding:22px 0;font-size:12.5px;color:var(--muted-2)}
+
+/* Ce qui a été trouvé, à mesure. */
+.gen-shape{padding:22px;border-radius:20px;border:1px solid rgba(9,24,45,.08);background:var(--white)}
+.gen-shape h3{margin-top:8px;font-family:var(--sora);font-weight:200;
+  font-size:clamp(24px,3vw,34px);line-height:1.1;letter-spacing:-.03em;color:var(--muted-2);
+  transition:color .8s var(--ease)}
+.gen-shape h3.on{color:var(--ink)}
+.gen-shape .stops{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
+.gen-shape .stops span{display:inline-flex;align-items:baseline;gap:8px;padding:7px 14px;
+  border-radius:999px;background:var(--navy);color:var(--cream);font-size:13px;
+  animation:riseIn .5s var(--ease) both}
+.gen-shape .stops b{font-size:9.5px;letter-spacing:.12em;color:var(--amber-hi);font-weight:400}
+
+/* Une tuile par journée : elles s'allument une à une. */
+.daybar{margin-top:18px;display:flex;gap:4px;flex-wrap:wrap}
+.daybar i{display:block;width:100%;max-width:26px;flex:1;height:6px;border-radius:3px;
+  background:rgba(9,24,45,.09);transition:background .6s var(--ease)}
+.daybar i.on{background:linear-gradient(90deg,var(--teal-2),var(--amber))}
+
+.gen-hint{margin-top:20px;font-size:12.5px;line-height:1.65;color:var(--muted-2)}
+
+@media(max-width:900px){
+  .gen-live{grid-template-columns:1fr}
+  .jlist{max-height:220px}
+}

@@ -62,6 +62,10 @@ export default function Generating({ tripId, totalDays, ob, onDone, onError }) {
   const [value, setValue] = useState(0);
   const [written, setWritten] = useState(0);
   const [doing, setDoing] = useState(null);
+  /* Le journal de ce qui a réellement été cherché. C'est la matière de
+     l'attente : elle grandit, et elle est vraie. */
+  const [log, setLog] = useState([]);
+  const [found, setFound] = useState({ destination: null, stops: [] });
   const [note, setNote] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [failure, setFailure] = useState(null);
@@ -114,6 +118,8 @@ export default function Generating({ tripId, totalDays, ob, onDone, onError }) {
             setDoing(null);
           } else if (e.t === "search") {
             setDoing(e.query);
+            /* On empile en tête, et on borne : au-delà, plus personne ne lit. */
+            setLog((l) => [{ q: e.query, at: Date.now() }, ...l].slice(0, 40));
           } else if (e.t === "progress") {
             /* L'avancement ne recule jamais : un retour en arrière visuel
                donnerait l'impression d'un travail défait. */
@@ -121,6 +127,9 @@ export default function Generating({ tripId, totalDays, ob, onDone, onError }) {
           } else if (e.t === "phase-done") {
             setValue((v) => Math.max(v, e.value));
             setDoing(null);
+            if (e.destination || e.stops?.length) {
+              setFound({ destination: e.destination || null, stops: e.stops || [] });
+            }
             if (e.written != null) setWritten(e.written);
             if (e.degraded?.length) {
               setNote("Certaines options avancées du modèle ne sont pas disponibles — la composition continue.");
@@ -162,6 +171,7 @@ export default function Generating({ tripId, totalDays, ob, onDone, onError }) {
   const retry = useCallback(() => {
     setFailure(null);
     setDoing(null);
+    setLog([]);
     started.current = false;
     setAttempt((n) => n + 1);
   }, []);
@@ -194,10 +204,6 @@ export default function Generating({ tripId, totalDays, ob, onDone, onError }) {
             <br />
             nous composons.
           </h1>
-          <p>
-            Odyssea consulte de vraies pages pour les compagnies, les quartiers, les tables et les
-            horaires. Comptez une à trois minutes — vous pouvez rester ici.
-          </p>
         </div>
 
         {/* L'avancement vient du flux du modèle : recherches parties et tokens
@@ -209,14 +215,6 @@ export default function Generating({ tripId, totalDays, ob, onDone, onError }) {
           </span>
           <span className="pct mono">{pct} %</span>
         </div>
-
-        {/* Ce que la composition est en train de faire, à la seconde. */}
-        {!failure && (
-          <p className={"gen-doing" + (doing ? " on" : "")}>
-            <Icon name={doing ? "compass" : "spark"} />
-            <span>{doing ? `Recherche : ${doing}` : "Rédaction en cours…"}</span>
-          </p>
-        )}
 
         {failure && (
           <div className="gen-fail" role="alert">
@@ -242,26 +240,96 @@ export default function Generating({ tripId, totalDays, ob, onDone, onError }) {
           </div>
         )}
 
-        <ol className="gen-phases">
-          {PHASES.map((p, i) => (
-            <li key={p.key} className={i < active ? "done" : i === active ? "run" : ""}>
-              <span className="m" aria-hidden="true">
-                {i < active ? <Icon name="check" /> : <b>{i + 1}</b>}
-              </span>
-              <span className="tx">
-                <b>{p.label}</b>
-                <i>
-                  {i === 1 && active === 1 && totalDays
-                    ? `${written} journée${written > 1 ? "s" : ""} écrite${written > 1 ? "s" : ""} sur ${totalDays}`
-                    : p.detail}
-                </i>
-              </span>
-              {i === active && !failure && <span className="pulse" aria-hidden="true" />}
-            </li>
-          ))}
-        </ol>
+        <div className="gen-live">
+          {/* À gauche : ce qui se passe, seconde après seconde. */}
+          <section className="gen-col">
+            <ol className="gen-phases">
+              {PHASES.map((p, i) => (
+                <li key={p.key} className={i < active ? "done" : i === active ? "run" : ""}>
+                  <span className="m" aria-hidden="true">
+                    {i < active ? <Icon name="check" /> : <b>{i + 1}</b>}
+                  </span>
+                  <span className="tx">
+                    <b>{p.label}</b>
+                    <i>
+                      {i === 1 && active === 1 && totalDays
+                        ? `${written} journée${written > 1 ? "s" : ""} écrite${written > 1 ? "s" : ""} sur ${totalDays}`
+                        : p.detail}
+                    </i>
+                  </span>
+                  {i === active && !failure && <span className="pulse" aria-hidden="true" />}
+                </li>
+              ))}
+            </ol>
 
-        <ParcoursMap ob={ob} step={7 + Math.round(value * 3)} total={11} />
+            {/* Le journal : chaque page réellement consultée, dans l'ordre.
+                C'est ce qui donne à l'attente quelque chose à regarder — et
+                c'est vrai, ligne par ligne. */}
+            <div className="gen-journal">
+              <div className="jh">
+                <span className="kicker steel">Ce que nous consultons</span>
+                {log.length > 0 && <b className="mono">{log.length}</b>}
+              </div>
+              {doing && !failure && (
+                <p className="jnow">
+                  <span className="dot" aria-hidden="true" />
+                  {doing}
+                </p>
+              )}
+              <ul className="jlist">
+                {log.slice(doing ? 1 : 0).map((l, i) => (
+                  <li key={l.at + ":" + i}>
+                    <Icon name="check" />
+                    <span>{l.q}</span>
+                  </li>
+                ))}
+              </ul>
+              {!log.length && !doing && (
+                <p className="jempty">Les recherches apparaîtront ici, au fur et à mesure.</p>
+              )}
+            </div>
+          </section>
+
+          {/* À droite : le voyage qui prend forme. */}
+          <section className="gen-col">
+            <div className="gen-shape">
+              <span className="kicker steel">Le voyage prend forme</span>
+              <h3 className={found.destination ? "on" : ""}>
+                {found.destination || dests.join(" · ") || "Votre destination"}
+              </h3>
+              {found.stops.length > 0 && (
+                <div className="stops">
+                  {found.stops.map((name, i) => (
+                    <span key={name} style={{ animationDelay: `${i * 0.12}s` }}>
+                      <b className="mono">{String(i + 1).padStart(2, "0")}</b>
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {totalDays > 0 && (
+                <div className="daybar" aria-label={`${written} journées écrites sur ${totalDays}`}>
+                  {Array.from({ length: totalDays }, (_, i) => (
+                    <i key={i} className={i < written ? "on" : ""} style={{ transitionDelay: `${i * 0.05}s` }} />
+                  ))}
+                </div>
+              )}
+              <p className="gen-hint">
+                Odyssea consulte de vraies pages pour les compagnies, les quartiers, les tables et
+                les horaires. Comptez une à trois minutes — vous pouvez rester ici.
+              </p>
+            </div>
+
+            {/* La carte se complète quand le plan livre ses escales : on part
+                de ce que le voyageur a demandé, on finit sur ce qui a été
+                retenu — Dakhla apparaît sans qu il ait eu à la nommer. */}
+            <ParcoursMap
+              ob={found.stops.length ? { ...ob, dests: found.stops } : ob}
+              step={7 + Math.round(value * 3)}
+              total={11}
+            />
+          </section>
+        </div>
 
         {note && <p className="gen-note">{note}</p>}
       </div>
