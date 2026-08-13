@@ -57,9 +57,23 @@ export default function Stage() {
       schedule();
     };
 
+    /* Le second lecteur ne charge qu'une fois le premier servi.
+
+       Les deux pointent sur le même fichier : lancés ensemble, ils partent en
+       deux téléchargements parallèles avant qu'aucun n'ait rempli le cache —
+       la vidéo arrivait donc deux fois sur le réseau. En attendant que le
+       premier tienne, le second la lit dans le cache. */
+    const warmSecond = () => {
+      if (stopped || vids[1].readyState >= 2) return;
+      vids[1].preload = "auto";
+      vids[1].load();
+    };
+
     const start = () => {
       vids[0].classList.add("on");
       vids[0].play().catch(() => {});
+      if (vids[0].readyState >= 4) warmSecond();
+      else vids[0].addEventListener("canplaythrough", warmSecond, { once: true });
       schedule();
     };
 
@@ -88,7 +102,9 @@ export default function Stage() {
       <div className="stage-media">
         <div className="stage-pan">
           {[a, b].map((ref, i) => (
-            <video key={i} ref={ref} muted playsInline preload="auto"
+            <video key={i} ref={ref} muted playsInline
+              /* Le relais attend son tour : voir warmSecond ci-dessus. */
+              preload={i === 0 ? "auto" : "none"}
               poster="/assets/ocean-poster.jpg" aria-hidden="true" tabIndex={-1}>
               <source src="/assets/ocean-loop.mp4" type="video/mp4" />
             </video>
