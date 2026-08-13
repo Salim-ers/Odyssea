@@ -2,15 +2,16 @@
 import { useEffect, useRef } from "react";
 import Composer from "./Composer";
 
-/* Scène d'ouverture : océan, logo géant, titre.
+/* Scène d'ouverture : le ciel, le logo géant, le titre.
 
-   Deux lecteurs se relaient en fondu de 800 ms : c'est ce fondu qui rend la
-   boucle invisible, et non une propriété de la vidéo. Un seul lecteur
-   laisserait voir le redémarrage du décodeur, quelle que soit la source.
+   Deux lecteurs se relaient en fondu de 800 ms : c'est ce fondu qui masque le
+   redémarrage du décodeur, qu'un lecteur seul laisserait voir.
 
-   La source n'a donc pas à être un aller-retour. Il suffit que sa dernière
-   image ressemble à la première — même horizon, même lumière — ce que le
-   fondu achève de raccorder. */
+   Le raccord de la boucle, lui, est fait à l'encodage : la fin du plan est
+   fondue par-dessus son début, si bien que la dernière image redevient la
+   première. Sans cela un avion qui traverse le cadre réapparaîtrait d'un
+   coup à son point de départ — un fondu de 800 ms ne rattrape pas un sujet
+   qui saute. */
 export default function Stage() {
   const a = useRef(null);
   const b = useRef(null);
@@ -105,8 +106,8 @@ export default function Stage() {
             <video key={i} ref={ref} muted playsInline
               /* Le relais attend son tour : voir warmSecond ci-dessus. */
               preload={i === 0 ? "auto" : "none"}
-              poster="/assets/ocean-poster.jpg" aria-hidden="true" tabIndex={-1}>
-              <source src="/assets/ocean-loop.mp4" type="video/mp4" />
+              poster="/assets/hero-poster.jpg" aria-hidden="true" tabIndex={-1}>
+              <source src="/assets/hero-loop.mp4" type="video/mp4" />
             </video>
           ))}
         </div>

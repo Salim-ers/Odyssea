@@ -12,4 +12,5 @@ out/
 # dépôt ni sur le déploiement. Seule la version encodée pour le web,
 # public/assets/ocean-loop.mp4, est versionnée.
 public/assets/ocean_loop.mp4
+public/assets/Avion.mp4
 public/assets/*.source.mp4
