@@ -7,3 +7,9 @@ out/
 .DS_Store
 *.log
 .data/
+
+# Rushes vidéo : la source 4K pèse plus de 200 Mo et n'a rien à faire dans le
+# dépôt ni sur le déploiement. Seule la version encodée pour le web,
+# public/assets/ocean-loop.mp4, est versionnée.
+public/assets/ocean_loop.mp4
+public/assets/*.source.mp4

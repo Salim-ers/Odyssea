@@ -4,10 +4,13 @@ import Composer from "./Composer";
 
 /* Scène d'ouverture : océan, logo géant, titre.
 
-   La vidéo source est un aller-retour (32 s) : sa dernière image est
-   identique à la première, il n'y a donc aucune rupture de mouvement.
-   Deux lecteurs se relaient malgré tout, en fondu, pour qu'aucun
-   redémarrage de décodeur ne soit visible à l'écran. */
+   Deux lecteurs se relaient en fondu de 800 ms : c'est ce fondu qui rend la
+   boucle invisible, et non une propriété de la vidéo. Un seul lecteur
+   laisserait voir le redémarrage du décodeur, quelle que soit la source.
+
+   La source n'a donc pas à être un aller-retour. Il suffit que sa dernière
+   image ressemble à la première — même horizon, même lumière — ce que le
+   fondu achève de raccorder. */
 export default function Stage() {
   const a = useRef(null);
   const b = useRef(null);
